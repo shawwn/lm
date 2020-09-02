@@ -1,18 +1,17 @@
+import argparse
 import os
 import random
-import argparse
+import re
 import shutil
-from glob import glob
-import ftfy
 import time
+from glob import glob
 from multiprocessing import Pool, cpu_count
 
-from lm_dataformat import Reader
-from tqdm import auto as tqdm
 from absl import app, logging
 from absl.flags import argparse_flags
+from tqdm import auto as tqdm
 
-import re
+import ftfy
 
 """
 Extract and cleans text and webarchive files
@@ -25,43 +24,11 @@ def clean_text(text):
     return NOA.sub(" ", text)
 
 
-def flags_parser(args):
-    parser = argparse_flags.ArgumentParser()
-    parser.add_argument(
-        "--input",
-        type=str,
-        help="Location of the dataset archives files. Files ending in .zst are treated as \
-                        archives, all others as raw text. Can be a glob (/dataset/*.xz, /dataset/*.txt)",
-    )
-    parser.add_argument(
-        "--output", type=str, help="Location to write the lm extracted files"
-    )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        default=False,
-        help="removes the output directory if exists",
-    )
-    parser.add_argument(
-        "--encoding",
-        type=str,
-        default="UTF-8",
-        help="The encoding to use for the dataset",
-    )
-    args = parser.parse_args(args[1:])
-    return args
-
-
 def process_single_file(src_dst):
     src, dst = src_dst
     name, file_ext = os.path.splitext(os.path.basename(src))
 
-    if file_ext in (".xz",):
-        with open(dst, "w", encoding="UTF-8") as wf, Reader(arch) as rf:
-            for s in rf.stream_data():
-                wf.write(clean_text(s))
-                wf.write("\n\n")
-    elif file_ext in (".txt",):
+    if file_ext in (".txt",):
         with open(src, "r", encoding="UTF-8") as rf, open(
             dst, "w", encoding="UTF-8"
         ) as wf:
@@ -80,6 +47,36 @@ def parallel(src_dst_list, total):
     for i in tqdm.tqdm(pool.imap(process_single_file, src_dst_list), total=total):
         ret += i
     return ret
+
+
+def parse_args(args, parser):
+    parser.add_argument(
+        "input",
+        type=str,
+        help="Location of the dataset archives files. Files ending in .zst are treated as \
+                        archives, all others as raw text. Can be a glob (/dataset/*.xz, /dataset/*.txt)",
+    )
+    parser.add_argument(
+        "output", type=str, help="Location to write the extracted files"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="removes the output directory if exists",
+    )
+    parser.add_argument(
+        "--encoding",
+        type=str,
+        default="UTF-8",
+        help="The encoding to use for the output dataset",
+    )
+
+
+def local_parse_args(args):
+    parser = argparse_flags.ArgumentParser()
+    parse_args(args, parser)
+    return parser.parse_args(args[1:])
 
 
 def main(args):
@@ -130,4 +127,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    app.run(main, flags_parser=flags_parser)
+    app.run(main, flags_parser=local_parse_args)
