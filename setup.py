@@ -10,9 +10,15 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = [ 
+        'absl-py==0.10.0', 
+        'pydantic==1.6.1', 'jsonnet', 
+        'tensorflow==1.15.3', 
+        'transformers==3.1.0', 
+        'tokenizers==0.8.1' 
+    ]
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = ['pytest-runner', 'wheel' ]
 
 test_requirements = ['pytest>=3', ]
 
@@ -25,29 +31,24 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
     ],
     description="End to End Language Model Pipeline built for training speed",
     entry_points={
         'console_scripts': [
-            'lm=lm.cli:main',
+            'lm=lm.cli.main:run',
         ],
     },
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='lm',
+    keywords='lm, language models, pipeline, TPU, tensorflow',
     name='lm',
-    packages=find_packages(include=['lm', 'lm.*']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/Mistobaan/lm',
+    url='https://github.com/NeuroArchitect/lm',
     version='0.1.0',
     zip_safe=False,
 )
