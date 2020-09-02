@@ -5,7 +5,7 @@ from glob import glob
 from absl import app, logging
 from absl.flags import argparse_flags
 
-import constants
+from lm.datasets import constants
 from tokenizers import (
     Tokenizer,
     decoders,
@@ -111,5 +111,8 @@ def main(args):
     logging.info("tokenizer model saved at %s", args.output)
 
 
-if __name__ == "__main__":
+def apprun():
     app.run(main, flags_parser=parse_flags)
+
+if __name__ == "__main__":
+    apprun()

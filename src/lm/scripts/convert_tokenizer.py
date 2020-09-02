@@ -30,13 +30,14 @@ def convert_tokenizer(src, dst):
 
 
 def main(args):
-
     try:
         convert_tokenizer(args.input, args.output)
         logging.info("tokenizer converted and saved to %s", args.output)
     except ValueError as e:
         logging.error("error: %r", str(e))
 
+def apprun():
+    app.run(main, flags_parser=parse_args)
 
 if __name__ == "__main__":
-    app.run(main, flags_parser=parse_args)
+    apprun()

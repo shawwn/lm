@@ -1,8 +1,8 @@
+"Base infeed class"
 from typing import Dict, Optional
 
-from pydantic import dataclass
+from pydantic.dataclasses import dataclass
 
-"Base infeed class"
 
 
 @dataclass

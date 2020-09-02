@@ -114,6 +114,8 @@ def main(args):
             except tf.errors.OutOfRangeError:
                 break
 
+def apprun():
+    app.run(main, flags_parser=parse_args)
 
 if __name__ == "__main__":
-    app.run(main, flags_parser=parse_args)
+    apprun()

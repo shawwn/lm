@@ -9,7 +9,7 @@ from absl.flags import argparse_flags
 from tqdm import auto as tqdm
 
 import lm.config
-import lm.datasets.example
+import lm.datasets.examples
 import lm.encoders
 
 
@@ -56,7 +56,7 @@ def parallel(src_dst_list, total):
     ret = 0
     for i in tqdm.tqdm(
         pool.imap(
-            lm.datasets.example.transform_many_and_write_one_tfrecord, src_dst_list
+            lm.datasets.examples.transform_many_and_write_one_tfrecord, src_dst_list
         ),
         total=total,
     ):

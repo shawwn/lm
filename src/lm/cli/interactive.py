@@ -11,7 +11,7 @@ from tensorflow.python.saved_model import (
     tag_constants,
 )
 
-import lm.cli.config
+import lm.config
 import lm.devices
 import lm.infeeds
 import lm.models
