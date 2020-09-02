@@ -23,6 +23,8 @@ requirements = [
 setup_requirements = ["pytest-runner", "wheel"]
 
 test_requirements = [
+    "mypy",
+    "pylint>=2.6.0",
     "pytest>=3",
 ]
 
