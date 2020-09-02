@@ -53,7 +53,7 @@ lint: ## check style with flake8
 	flake8 src/lm tests
 
 test: ## run tests quickly with the default Python
-	pytest
+	pytest tests
 
 test-all: ## run tests on every Python version with tox
 	tox

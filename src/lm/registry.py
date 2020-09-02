@@ -16,7 +16,7 @@ def register_model(f, name, config):
     return wrapper
 
 
-def register_datasets(f, name, config):
+def register_dataset(f, name, config):
     assert not (name in REGISTRY), "model with that name already present"
     REGISTRY["datasets"][name] = f
 
@@ -27,7 +27,7 @@ def register_datasets(f, name, config):
     return wrapper
 
 
-def register_infeeds(f, name, config):
+def register_infeed(f, name, config):
     assert not (name in REGISTRY), "model with that name already present"
     REGISTRY["infeeds"][name] = f
 
@@ -37,6 +37,15 @@ def register_infeeds(f, name, config):
 
     return wrapper
 
+def register_encoder(f, name, config):
+    assert not (name in REGISTRY), "model with that name already present"
+    REGISTRY["encoders"][name] = f
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwds):
+        return f(*args, **kwds)
+
+    return wrapper
 
 def model_from_config(config: Dict):
     model = config["kind"]
