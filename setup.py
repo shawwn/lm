@@ -14,7 +14,7 @@ requirements = [
     "absl-py==0.10.0",
     "pydantic==1.6.1",
     "jsonnet",
-    "tensorflow==1.15.3",
+    "tensorflow>=1.15.2,<2.0",
     "mesh_tensorflow",
     "transformers==3.1.0",
     "tokenizers==0.8.1rc2",
