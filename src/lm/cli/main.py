@@ -28,6 +28,8 @@ def register_subcommand(module_name):
 def parse_args(args):
     # Parse command line arguments
     parser = argparse_flags.ArgumentParser()
+    parser.add_argument("--seed", type=int, default=1337, help="seed")
+
     subparsers = parser.add_subparsers(help="Available commands", dest="subparser")
     for name, cmd in SUBCOMMANDS.items():
         cmd_parser = subparsers.add_parser(
@@ -52,6 +54,8 @@ def main(args):
 
 def apprun():
     tf.disable_v2_behavior()
+    register_subcommand("preprocess")
+    register_subcommand("cleantxt")
     register_subcommand("configure")
     register_subcommand("train")
     register_subcommand("eval")
