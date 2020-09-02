@@ -10,6 +10,7 @@ from .registry import (
     register_encoder,
     register_infeed,
     register_model,
+    register_task,
 )
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "register_dataset",
     "register_encoder",
     "register_infeed",
+    "register_task",
     "__version__",
 ]

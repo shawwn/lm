@@ -1,14 +1,55 @@
+"Utility module to deal with resolving the system configuration"
+
 import json
 import os
 import sys
 
 import tensorflow as tf
 from absl import logging
-
 import _jsonnet
+import pkgutil
 
-"Utility module to deal with resolving the system configuration"
+LIBRARY_PATHS = []
 
+def register_path(path):
+    if path in LIBRARY_PATHS:
+        return
+    LIBRARY_PATHS.append(path)
+
+#  Returns content if worked, None if file not found, or throws an exception
+def try_path(location, rel):
+    if not rel:
+        raise RuntimeError('Got invalid filename (empty string).')
+    if rel[0] == '/':
+        full_path = rel
+    else:
+        full_path = location + rel
+    if full_path[-1] == '/':
+        raise RuntimeError('Attempted to import a directory')
+
+    if not os.path.isfile(full_path):
+        return full_path, None
+    with open(full_path) as f:
+        return full_path, f.read()
+
+
+def import_callback(location, rel):
+    # try relative first
+    full_path, content = try_path(location, rel)
+    if content:
+        return full_path, content
+    # standard library
+
+    data = pkgutil.get_data(__name__, "jsonnet/" + rel)
+    if data:
+        return '__stdlib__', data.decode('utf-8')
+
+    # registered lib path
+    for libpath in LIBRARY_PATHS:
+        full_path, content = try_path(libpath, rel)
+        if content:
+            return full_path, content
+    raise RuntimeError('File not found')
 
 def load(resource: str):
     if tf.io.gfile.isdir(resource):
@@ -32,7 +73,7 @@ def load(resource: str):
             json_str = _jsonnet.evaluate_file(
                 resource,
                 ext_vars={"MODEL_PATH": "Bob"},
-                # import_callback=import_callback,
+                import_callback=import_callback,
             )
             params = json.loads(json_str)
         except RuntimeError as e:

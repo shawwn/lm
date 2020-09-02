@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Dict
 
 import tensorflow as tf
 from absl import app, logging
@@ -11,9 +10,9 @@ from tqdm import auto as tqdm
 
 import lm.config
 import lm.infeeds.seq2seq
+import lm.tasks
 
-
-def parse_args(args, parser=None):
+def parse_args(_, parser):
     # Parse command line arguments
     parser.add_argument(
         "taskspec",
@@ -38,49 +37,19 @@ def local_parse_args(args):
     return parser.parse_args(args[1:])
 
 
-def example_producer(infeed):
-    with v1.Session(graph=tf.Graph()) as sess:
-        ds = infeed({"batch_size": 8})
-
-        it = ds.make_one_shot_iterator()
-        example = it.get_next()
-        while True:
-            try:
-                result = sess.run(example)
-                yield result
-            except tf.errors.OutOfRangeError:
-                logging.error("unexpected end of infinite dataset",)
-
-
-@dataclass
-class TaskSpec:
-    name: str
-    description: str
-    dataset: Dict
-
-
-def _int64_feature(value):
-    """Returns an int64_list from a bool / enum / int / uint."""
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
-
-
-def example_proto(example):
-    # Helper function to avoid code duplication, writes the data as an example to the file and increments i
-    content, target = example
-    feature = {"content": _int64_feature(content), "target": _int64_feature(target)}
-    return tf.train.Example(features=tf.train.Features(feature=feature))
-
-
 def main(args):
     logging.info("started synth process")
 
     task_dict = lm.config.load(args.taskspec)
-    task = TaskSpec(**task_dict)
+    logging.info(task_dict)
+    task = lm.registry.get_task(task_dict)
     if args.vocab_size:
         task.dataset.vocab_size = args.vocab_size
     if args.ctx_len:
         task.dataset.context_length = args.ctx_len
-    seq = lm.infeeds.seq2seq.AddNSequenceGenerator(task.dataset)
+
+    seq = task.infeed()
+    # seq = lm.infeeds.seq2seq.AddNSequenceGenerator(task.dataset)
 
     tf.io.gfile.makedirs(args.output)
     dscfg = dict(
@@ -97,13 +66,6 @@ def main(args):
 
     output_location = os.path.join(args.output, "synth_%05d.tfrecord" % 1)
 
-    with tf.io.TFRecordWriter(output_location) as w:
-        it = iter(example_producer(seq))
-        for _ in tqdm.tqdm(range(args.n_samples)):
-            batch_ex = next(it)
-            for c, t in zip(batch_ex[0], batch_ex[1]):
-                proto = example_proto((c, t))
-                w.write(proto.SerializeToString())
 
     # train
     logging.info("completed synth process. dataset generated %s", args.output)

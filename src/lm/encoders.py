@@ -39,7 +39,7 @@ def load_tokenizer(location):
         )
     else:
         if location.startswith("/"):
-            raise ValueError("invalid location %s", location)
+            raise ValueError("invalid location %s" % location)
         else:
             fastok = GPT2TokenizerFast.from_pretrained(location)
     return fastok

@@ -1,13 +1,12 @@
+"""
+Sequence to sequence input configuration
+"""
 import tensorflow as tf
 from absl import logging
 
 import lm
 
 from .base import Infeed, InfeedConfig
-
-"""
-Sequence to sequence input configuration
-"""
 
 
 # @lm.register_infeed('Seq2SeqTFRecordInfeed', InfeedConfig)
