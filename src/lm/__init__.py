@@ -5,7 +5,12 @@ __email__ = "remove-this-fmilo@entropysource.com"
 __version__ = "0.1.0"
 
 
-from .registry import register_dataset, register_infeed, register_model, register_encoder
+from .registry import (
+    register_dataset,
+    register_encoder,
+    register_infeed,
+    register_model,
+)
 
 __all__ = [
     "register_model",

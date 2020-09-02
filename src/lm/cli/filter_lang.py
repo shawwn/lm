@@ -56,5 +56,9 @@ def main(_):
             logging.info(str(score, lang, FLAGS.lang, FLAGS.threshold))
 
 
-if __name__ == "__main__":
+def apprun():
     app.run(main)
+
+
+if __name__ == "__main__":
+    apprun()

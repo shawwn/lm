@@ -37,6 +37,7 @@ def register_infeed(f, name, config):
 
     return wrapper
 
+
 def register_encoder(f, name, config):
     assert not (name in REGISTRY), "model with that name already present"
     REGISTRY["encoders"][name] = f
@@ -46,6 +47,7 @@ def register_encoder(f, name, config):
         return f(*args, **kwds)
 
     return wrapper
+
 
 def model_from_config(config: Dict):
     model = config["kind"]

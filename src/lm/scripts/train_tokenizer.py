@@ -1,7 +1,13 @@
+"""
+Trains a tokenizer over a rawtxt corpus
+"""
+
 import os
 import random
+import sys
 from glob import glob
 
+import tensorflow as tf
 from absl import app, logging
 from absl.flags import argparse_flags
 
@@ -18,10 +24,6 @@ from tokenizers.normalizers import NFKC, Sequence  # , Lowercase
 
 # from tokenizers.pre_tokenizers import ByteLevel
 
-"""
-Trains a tokenizer over a rawtxt corpus
-"""
-
 
 def parse_flags(argv):
     parser = argparse_flags.ArgumentParser()
@@ -37,6 +39,12 @@ def parse_flags(argv):
         type=str,
         required=True,
         help="Location to write the generated tokenizer configuration",
+    )
+    parser.add_argument(
+        "--extra_tokens",
+        type=str,
+        help="location of a txt file with one word per line",
+        required=False,
     )
     parser.add_argument(
         "--vocab_size", type=int, help="Size of vocabulary", required=True
@@ -84,6 +92,14 @@ def main(args):
     # setup
     tokenizer = setup_tokenizer(args)
 
+    if args.extra_tokens:
+        with tf.io.gfile.GFile(args.extra_tokens) as fd:
+            words = [l.strip() for l in fd.readlines()]
+        tokenizer.add_tokens(words)
+        if args.vocab_size < len(words):
+            logging.error("vocab size is less than the provided tokens. aborting")
+            sys.exit(-1)
+
     # train
     trainer = trainers.BpeTrainer(
         vocab_size=args.vocab_size,
@@ -113,6 +129,7 @@ def main(args):
 
 def apprun():
     app.run(main, flags_parser=parse_flags)
+
 
 if __name__ == "__main__":
     apprun()

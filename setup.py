@@ -44,7 +44,7 @@ requirements = [
     "transformers@git+https://github.com/Mistobaan/transformers.git@3e8a0b2#egg=transformers-3.0.1",
     "tokenizers==0.8.1",
     "ftfy>=5.8,<5.9",
-    "pyfarmhash==0.2.2"
+    "pyfarmhash==0.2.2",
 ]
 
 setup_requirements = ["pytest-runner", "wheel"]
@@ -68,13 +68,15 @@ setup(
         "Programming Language :: Python :: 3.7",
     ],
     description="End to End Language Model Pipeline built for training speed",
-    entry_points={"console_scripts": [
-        "lm=lm.cli.main:apprun",
-        "filter_lang=lm.cli.filter_lang:main",
-        "train_tokenizer=lm.scripts.train_tokenizer:main"
-        "convert_tokenizer=lm.scripts.convert_tokenizer:main"
-        "check_dataset=lm.scripts.check_dataset:main"
-        ],},
+    entry_points={
+        "console_scripts": [
+            "lm=lm.cli.main:apprun",
+            "lm_filter_lang=lm.cli.filter_lang:apprun",
+            "lm_train_tokenizer=lm.scripts.train_tokenizer:apprun",
+            "lm_convert_tokenizer=lm.scripts.convert_tokenizer:apprun",
+            "lm_check_dataset=lm.scripts.check_dataset:apprun",
+        ],
+    },
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + "\n\n" + history,

@@ -12,11 +12,17 @@ import _jsonnet
 
 def load(resource: str):
     if tf.io.gfile.isdir(resource):
-        resource = os.path.join(resource, "dataset.info.json")
-        if not tf.io.gfile.exists(resource):
-            raise ValueError(
-                "directory provided but directory does not contain a dataset.info.json file"
-            )
+        if tf.io.gfile.exists(os.path.join(resource, "dataset.info.json")):
+            resource = os.path.join(resource, "dataset.info.json")
+        if tf.io.gfile.exists(os.path.join(resource, "merges.txt")):
+            # is a tokenizer directory
+            return {
+                "kind": "hf",
+                "location": resource,
+            }
+        raise ValueError(
+            "directory %s provided but directory does not contain any info" % resource
+        )
     path, ext = os.path.splitext(resource)
     if ext in (".json",):
         with tf.io.gfile.GFile(resource) as fd:

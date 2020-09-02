@@ -5,6 +5,7 @@ import tensorflow as tf
 from absl import app, logging
 from absl.flags import argparse_flags
 
+import lm.config
 import lm.encoders
 
 PreProcessedTextLine = collections.namedtuple(
@@ -15,16 +16,14 @@ PreProcessedTextLine = collections.namedtuple(
 def parse_args(argv):
     parser = argparse_flags.ArgumentParser()
     parser.add_argument(
-        "--input",
+        "input",
         type=str,
-        required=True,
         help="Path to where your files are located. Files ending in .zst are treated as \
                         archives, all others as raw text.",
     )
     parser.add_argument(
-        "--tokenizer", type=str, required=True, help="Name or path of a tokenizer spec"
+        "--encoder", type=str, required=True, help="Name or path of a tokenizer spec"
     )
-    parser.add_argument("--random_seed", type=int, default=1337, help="seed")
     parser.add_argument(
         "--sample_size", type=int, default=10, help="the size of samples to inspect"
     )
@@ -70,7 +69,8 @@ def read_example(example_proto, max_seq_len=1024) -> dict:
 
 
 def main(args):
-    tokenizer = lm.encoders.load_tokenizer(args.tokenizer)
+    encfg = lm.config.load(args.encoder)
+    tokenizer = lm.encoders.from_config(encfg)
     with tf.Session() as sess:
         files = tf.io.gfile.glob(args.input)
         if len(files) == 0:
@@ -114,8 +114,10 @@ def main(args):
             except tf.errors.OutOfRangeError:
                 break
 
+
 def apprun():
     app.run(main, flags_parser=parse_args)
+
 
 if __name__ == "__main__":
     apprun()

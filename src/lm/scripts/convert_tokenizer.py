@@ -36,8 +36,10 @@ def main(args):
     except ValueError as e:
         logging.error("error: %r", str(e))
 
+
 def apprun():
     app.run(main, flags_parser=parse_args)
+
 
 if __name__ == "__main__":
     apprun()
