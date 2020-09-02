@@ -1,13 +1,11 @@
 import os
 import sys
-import json
 
-from pathlib import Path
 import tensorflow as tf
-import _jsonnet
-from absl import app
+from absl import app, logging
 from absl.flags import argparse_flags
-from absl import logging
+
+import _jsonnet
 
 
 def parse_args(args, parser):
@@ -48,7 +46,7 @@ def import_callback(dir, rel):
 
 def main(args):
     try:
-        json_str = _jsonnet.evaluate_file(
+        _jsonnet.evaluate_file(
             args.input, ext_vars={"MODEL_PATH": "Bob"}, import_callback=import_callback,
         )
     except RuntimeError as e:

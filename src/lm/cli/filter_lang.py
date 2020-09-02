@@ -1,7 +1,9 @@
-import fasttext
 import os
 import sys
-from absl import app, logging, flags
+
+from absl import app, flags, logging
+
+import fasttext
 
 """
 Filter lines of text by language using fasttext

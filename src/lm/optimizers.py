@@ -1,13 +1,8 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import mesh_tensorflow as mtf
 import tensorflow.compat.v1 as tf
-
-from pydantic import BaseModel, validator
 from pydantic.dataclasses import dataclass
-from typing import Any, Dict, Optional
 
 
 @dataclass

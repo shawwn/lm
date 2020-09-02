@@ -1,12 +1,11 @@
-import os
-import random
 import collections
+import random
 
 import tensorflow as tf
 from absl import app, logging
 from absl.flags import argparse_flags
-from tokenizers import Tokenizer
-from transformers import GPT2Config, GPT2Tokenizer, GPT2TokenizerFast
+
+import lm.encoders
 
 PreProcessedTextLine = collections.namedtuple(
     "PreProcessedTextLine", ["id", "content", "target", "offset_start", "offset_end"]
@@ -33,19 +32,19 @@ def parse_args(argv):
     return args
 
 
-def load_tokenizer(location):
-    if tf.io.gfile.exists(os.path.join(location, "merges.txt")):
-        # use tf gfile in case the dictionary is remote
-        fastok = GPT2TokenizerFast.from_pretrained(location)
-        fastok.add_special_tokens(
-            {"eos_token": "[EOS]", "pad_token": "[PAD]", "pad_token": "[UNK]",}
-        )
-    else:
-        if location.startswith("/"):
-            raise ValueError("invalid location %s", location)
-        else:
-            fastok = GPT2TokenizerFast.from_pretrained(location)
-    return fastok
+# def load_tokenizer(location):
+#     if tf.io.gfile.exists(os.path.join(location, "merges.txt")):
+#         # use tf gfile in case the dictionary is remote
+#         fastok = GPT2TokenizerFast.from_pretrained(location)
+#         fastok.add_special_tokens(
+#             {"eos_token": "[EOS]", "pad_token": "[PAD]", "unk_token": "[UNK]",}
+#         )
+#     else:
+#         if location.startswith("/"):
+#             raise ValueError("invalid location %s", location)
+#         else:
+#             fastok = GPT2TokenizerFast.from_pretrained(location)
+#     return fastok
 
 
 def read_example(example_proto, max_seq_len=1024) -> dict:
@@ -71,7 +70,7 @@ def read_example(example_proto, max_seq_len=1024) -> dict:
 
 
 def main(args):
-    tokenizer = load_tokenizer(args.tokenizer)
+    tokenizer = lm.encoders.load_tokenizer(args.tokenizer)
     with tf.Session() as sess:
         files = tf.io.gfile.glob(args.input)
         if len(files) == 0:
@@ -103,7 +102,7 @@ def main(args):
                 ids = tokenizer.decode(result["target"])
 
                 logging.info("gold text:    %r", pt.content.decode("utf-8"))
-                logging.info("decoded:       %r", ids),
+                logging.info("decoded:       %r", ids)
                 logging.info(
                     "tokenization: %s",
                     [

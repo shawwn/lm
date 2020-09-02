@@ -1,13 +1,13 @@
-from typing import Dict
-import functools
 import collections
+import functools
+from typing import Dict
 
 REGISTRY = collections.defaultdict(list)
 
 
 def register_model(f, name, config):
     assert not (name in REGISTRY), "model with that name already present"
-    REGISTRY["models"][model_name] = f
+    REGISTRY["models"][name] = f
 
     @functools.wraps(f)
     def wrapper(*args, **kwds):
@@ -18,7 +18,7 @@ def register_model(f, name, config):
 
 def register_datasets(f, name, config):
     assert not (name in REGISTRY), "model with that name already present"
-    REGISTRY["datasets"][model_name] = f
+    REGISTRY["datasets"][name] = f
 
     @functools.wraps(f)
     def wrapper(*args, **kwds):
@@ -29,7 +29,7 @@ def register_datasets(f, name, config):
 
 def register_infeeds(f, name, config):
     assert not (name in REGISTRY), "model with that name already present"
-    REGISTRY["infeeds"][model_name] = f
+    REGISTRY["infeeds"][name] = f
 
     @functools.wraps(f)
     def wrapper(*args, **kwds):

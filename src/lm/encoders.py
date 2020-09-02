@@ -1,9 +1,13 @@
+import os
+from typing import Dict
+
+import tensorflow as tf
+from pydantic import AnyUrl
+from pydantic.dataclasses import dataclass
+
 from tokenizers import Tokenizer
 from transformers import GPT2TokenizerFast
-from pydantic.dataclasses import dataclass
-from pydantic import AnyUrl
 
-from typing import Dict
 
 @dataclass
 class EncoderConfig:
@@ -13,7 +17,7 @@ class EncoderConfig:
 
 def fetch_encoder(config: EncoderConfig):
     if config.is_pretrained:
-        return GPT2Tokenizer.from_pretrained(config.location)
+        return GPT2TokenizerFast.from_pretrained(config.location)
 
     return Tokenizer.from_file(config.location)
 
@@ -25,12 +29,13 @@ def encode(encoder, text):
         return result
     return result.ids
 
+
 def load_tokenizer(location):
     if tf.io.gfile.exists(os.path.join(location, "merges.txt")):
         # use tf gfile in case the dictionary is remote
         fastok = GPT2TokenizerFast.from_pretrained(location)
         fastok.add_special_tokens(
-            {"eos_token": "[EOS]", "pad_token": "[PAD]", "unk_token": "[UNK]",}
+            {"eos_token": "[EOS]", "pad_token": "[PAD]", "unk_token": "[UNK]"}
         )
     else:
         if location.startswith("/"):
@@ -39,6 +44,8 @@ def load_tokenizer(location):
             fastok = GPT2TokenizerFast.from_pretrained(location)
     return fastok
 
-def from_config(config:Dict):
-    if config['kind'] == 'tokenizer':
-        return load_tokenizer(config)
+
+def from_config(config: Dict):
+    if config["kind"] == "hf":
+        return load_tokenizer(config["location"])
+    raise ValueError("invalid configuration")

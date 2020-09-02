@@ -1,16 +1,13 @@
+import json
 import os
 import sys
-import json
 
 import tensorflow as tf
-import _jsonnet
-from absl import app
-from absl.flags import argparse_flags
 from absl import logging
 
-"""
-utility module to deal with resolving the system configuration
-"""
+import _jsonnet
+
+"Utility module to deal with resolving the system configuration"
 
 
 def load(resource: str):

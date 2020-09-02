@@ -1,22 +1,20 @@
-import os
-import json
 import copy
-from typing import Any, Dict, Optional, Union
+import json
+import os
+from typing import Dict
 
-import mesh_tensorflow as mtf
 import tensorflow as tf
-import tensorflow.compat.v1 as v1
 from absl import app, logging
 from absl.flags import argparse_flags
-from pydantic import BaseModel, validator
 from pydantic.dataclasses import dataclass
 
-
-import lm.cli.config
-import lm.models
-import lm.infeeds
-from lm.devices.tpu import TPUJobSpec, TPUInfeedSpec
+import lm.config
 import lm.devices
+import lm.infeeds
+import lm.models
+from lm.devices.tpu import TPUInfeedSpec, TPUJobSpec
+
+"Eval a saved model using a dataset"
 
 
 @dataclass
@@ -43,20 +41,20 @@ class Evaluator:
     def load_model(self):
         if not (self.model is None):
             return self.model
-        self.model = models.from_config(self.config.model)
+        self.model = lm.models.from_config(self.config.model)
         return self.model
 
     def load_infeed(self):
         if not (self.infeed is None):
             return self.infeed
-        self.infeed = inputs.from_config(self.config.infeed)
+        self.infeed = lm.infeeds.from_config(self.config.infeed)
         return self.infeed
 
     def create_jobspec(self):
         model = self.load_model()
         infeed = self.load_infeed()
         return TPUJobSpec(
-            function=self.model,
+            function=model,
             params={
                 # patch legacy config
                 "eval_steps": self.config.schedule.steps,
@@ -67,7 +65,7 @@ class Evaluator:
                 "vocab_size": infeed.dataset.vocab_size,
             },
             max_steps=self.config.schedule.steps,
-            use_tpu=type(self.config.device) is devices.TPUDeviceSpec,
+            use_tpu=type(self.config.device) is lm.devices.TPUDeviceSpec,
             model_path=self.config.model_path,
             # steps_per_iteration=self.config.schedule.steps_per_iteration,
             # steps_per_checkpoint=self.config.schedule.steps_per_checkpoint,
@@ -78,7 +76,7 @@ class Evaluator:
 
     def execute(self, jobspec):
         if self.device is None:
-            self.device = devices.from_config(self.config.device)
+            self.device = lm.devices.from_config(self.config.device)
         return self.device.execute(jobspec)
 
 
@@ -120,10 +118,10 @@ def convert_train_spec_to_eval_spec(settings):
 def main(args):
     logging.info("started evaluation process")
 
-    settings = config.load(args.runspec)
+    settings = lm.config.load(args.runspec)
 
     if args.dataset:
-        dscfg = config.load(args.dataset)
+        dscfg = lm.config.load(args.dataset)
         ds_location = os.path.split(args.dataset)[0] + "/*.tfrecord"
         settings["infeed"]["dataset"] = dscfg
         settings["infeed"]["file_pattern"] = ds_location
@@ -135,12 +133,12 @@ def main(args):
 
     # patch config
     if args.tpu:
-        econfig.device = devices.TPUDeviceSpec(address=args.tpu)
+        econfig.device = lm.devices.TPUDeviceSpec(address=args.tpu)
 
     evaluator = Evaluator(econfig)
 
-    if args.check_dataset:
-        check_dataset(trainer, args)
+    # if args.check_dataset:
+    #     check_dataset(trainer, args)
 
     # saves config to logdir for experiment management
     # save_config(pprint.pformat(params), params["model_path"])

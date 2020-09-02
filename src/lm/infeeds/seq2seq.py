@@ -1,5 +1,13 @@
+import tensorflow as tf
+from absl import logging
+
 import lm
-from .base import Infeed
+
+from .base import Infeed, InfeedConfig
+
+"""
+Sequence to sequence input configuration
+"""
 
 
 # @lm.register_infeed('Seq2SeqTFRecordInfeed', InfeedConfig)
@@ -11,7 +19,7 @@ class Seq2SeqTFRecordInfeed(Infeed):
         self.load_dataset(config.dataset)
 
     def load_dataset(self, dataset):
-        self.dataset = datasets.from_config(dataset)
+        self.dataset = lm.datasets.from_config(dataset)
         return self.dataset
 
     def __call__(self, params):
@@ -36,10 +44,8 @@ class Seq2SeqTFRecordInfeed(Infeed):
             raise ValueError("No matching files found")
         ds = tf.data.TFRecordDataset(filenames, buffer_size=64 * 1024 * 1024)
         keys = ["content", "target"]
-        # Examples are already pre-processed
-        PAD = 0
-        EOS = 1
 
+        # Examples are already pre-processed
         def decode_example(serialized_example):
             """Return a dict of Tensors from a serialized tensorflow.Example."""
             decoded = tf.io.parse_example(

@@ -1,25 +1,20 @@
-import os
-import collections
-import random
-import json
 import datetime
-from typing import Any, Dict, Optional, Union
+import json
+import os
+from typing import Dict
 
-import mesh_tensorflow as mtf
 import tensorflow as tf
 import tensorflow.compat.v1 as v1
 from absl import app, logging
 from absl.flags import argparse_flags
-from pydantic import BaseModel, validator
 from pydantic.dataclasses import dataclass
 
-import lm.cli.config
+import lm.config
 import lm.datasets
-import lm.models
-import lm.infeeds
 import lm.devices
-
-from lm.devices.tpu import TPUJobSpec, TPUInfeedSpec
+import lm.infeeds
+import lm.models
+from lm.devices.tpu import TPUInfeedSpec, TPUJobSpec
 
 
 def serving_input_receiver_fn():
@@ -45,7 +40,7 @@ class TrainerConfig:
     device: Dict
     infeed: Dict
     model: Dict
-    other: Any
+    other: Dict
     regularization: Dict
     runspec: RunSpec
     schedule: ScheduleSpec
@@ -70,20 +65,20 @@ class Trainer:
     def load_model(self):
         if not (self.model is None):
             return self.model
-        self.model = models.from_config(self.config.model)
+        self.model = lm.models.from_config(self.config.model)
         return self.model
 
     def load_infeed(self):
         if not (self.infeed is None):
             return self.infeed
-        self.infeed = infeed = inputs.from_config(self.config.infeed)
+        self.infeed = lm.infeeds.from_config(self.config.infeed)
         return self.infeed
 
     def create_train_jobspec(self):
         model = self.load_model()
         infeed = self.load_infeed()
         return TPUJobSpec(
-            function=self.model,
+            function=model,
             params={
                 # patch legacy config
                 "opt_name": self.config.runspec.optimizer["name"],
@@ -114,7 +109,7 @@ class Trainer:
             EOS = 1
 
             return TPUJobSpec(
-                function=self.model,
+                function=model,
                 params={
                     # patch legacy config
                     "opt_name": self.config.runspec.optimizer["name"],
@@ -142,81 +137,81 @@ class Trainer:
 
     def execute(self, jobspec):
         if self.device is None:
-            self.device = devices.from_config(self.config.device)
+            self.device = lm.devices.from_config(self.config.device)
         return self.device.execute(jobspec)
 
-    def train(self):
-        model, config = self.model, self.config
-        # raw_model = model.module if hasattr(self.model, "module") else model
-        # optimizer = raw_model.configure_optimizers(config)
+    # def train(self):
+    # model, config = self.model, self.config
+    # raw_model = model.module if hasattr(self.model, "module") else model
+    # optimizer = raw_model.configure_optimizers(config)
 
-        # def run_epoch(split):
-        # is_train = split == 'train'
-        # model.train(is_train)
-        # data = self.dataset
-        # loader = DataLoader(data, shuffle=True, pin_memory=True,
-        #                     batch_size=config.batch_size,
-        #                     num_workers=config.num_workers)
+    # def run_epoch(split):
+    # is_train = split == 'train'
+    # model.train(is_train)
+    # data = self.dataset
+    # loader = DataLoader(data, shuffle=True, pin_memory=True,
+    #                     batch_size=config.batch_size,
+    #                     num_workers=config.num_workers)
 
-        # losses = []
-        # pbar = tqdm(enumerate(loader), total=len(loader)) if is_train else enumerate(loader)
-        # for it, (x, y) in pbar:
+    # losses = []
+    # pbar = tqdm(enumerate(loader), total=len(loader)) if is_train else enumerate(loader)
+    # for it, (x, y) in pbar:
 
-        #     # place data on the correct device
-        #     x = x.to(self.device)
-        #     y = y.to(self.device)
+    #     # place data on the correct device
+    #     x = x.to(self.device)
+    #     y = y.to(self.device)
 
-        #     # forward the model
-        #     with torch.set_grad_enabled(is_train):
-        #         logits, loss = model(x, y)
-        #         loss = loss.mean() # collapse all losses if they are scattered on multiple gpus
-        #         losses.append(loss.item())
+    #     # forward the model
+    #     with torch.set_grad_enabled(is_train):
+    #         logits, loss = model(x, y)
+    #         loss = loss.mean() # collapse all losses if they are scattered on multiple gpus
+    #         losses.append(loss.item())
 
-        #     if is_train:
+    #     if is_train:
 
-        #         # backprop and update the parameters
-        #         model.zero_grad()
-        #         loss.backward()
-        #         torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
-        #         optimizer.step()
+    #         # backprop and update the parameters
+    #         model.zero_grad()
+    #         loss.backward()
+    #         torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
+    #         optimizer.step()
 
-        #         # decay the learning rate based on our progress
-        #         if config.lr_decay:
-        #             self.tokens += (y >= 0).sum() # number of tokens processed this step (i.e. label is not -100)
-        #             if self.tokens < config.warmup_tokens:
-        #                 # linear warmup
-        #                 lr_mult = float(self.tokens) / float(max(1, config.warmup_tokens))
-        #             else:
-        #                 # cosine learning rate decay
-        #                 progress = float(self.tokens - config.warmup_tokens) / float(max(1, config.final_tokens - config.warmup_tokens))
-        #                 lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
-        #             lr = config.learning_rate * lr_mult
-        #             for param_group in optimizer.param_groups:
-        #                 param_group['lr'] = lr
-        #         else:
-        #             lr = config.learning_rate
+    #         # decay the learning rate based on our progress
+    #         if config.lr_decay:
+    #             self.tokens += (y >= 0).sum() # number of tokens processed this step (i.e. label is not -100)
+    #             if self.tokens < config.warmup_tokens:
+    #                 # linear warmup
+    #                 lr_mult = float(self.tokens) / float(max(1, config.warmup_tokens))
+    #             else:
+    #                 # cosine learning rate decay
+    #                 progress = float(self.tokens - config.warmup_tokens) / float(max(1, config.final_tokens - config.warmup_tokens))
+    #                 lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
+    #             lr = config.learning_rate * lr_mult
+    #             for param_group in optimizer.param_groups:
+    #                 param_group['lr'] = lr
+    #         else:
+    #             lr = config.learning_rate
 
-        #         # report progress
-        #         pbar.set_description(f"epoch {epoch+1} iter {it}: train loss {loss.item():.5f}. lr {lr:e}")
+    #         # report progress
+    #         pbar.set_description(f"epoch {epoch+1} iter {it}: train loss {loss.item():.5f}. lr {lr:e}")
 
-        # if not is_train:
-        #     test_loss = float(np.mean(losses))
-        #     logger.info("test loss: %f", test_loss)
-        #     return test_loss
+    # if not is_train:
+    #     test_loss = float(np.mean(losses))
+    #     logger.info("test loss: %f", test_loss)
+    #     return test_loss
 
-        # best_loss = float('inf')
-        # self.tokens = 0 # counter used for learning rate decay
-        # for epoch in range(config.max_epochs):
+    # best_loss = float('inf')
+    # self.tokens = 0 # counter used for learning rate decay
+    # for epoch in range(config.max_epochs):
 
-        #     run_epoch('train')
-        #     if self.test_dataset is not None:
-        #         test_loss = run_epoch('test')
+    #     run_epoch('train')
+    #     if self.test_dataset is not None:
+    #         test_loss = run_epoch('test')
 
-        #     # supports early stopping based on the test loss, or just save always if no test set is provided
-        #     good_model = self.test_dataset is None or test_loss < best_loss
-        #     if self.config.ckpt_path is not None and good_model:
-        #         best_loss = test_loss
-        #         self.save_checkpoint()
+    #     # supports early stopping based on the test loss, or just save always if no test set is provided
+    #     good_model = self.test_dataset is None or test_loss < best_loss
+    #     if self.config.ckpt_path is not None and good_model:
+    #         best_loss = test_loss
+    #         self.save_checkpoint()
 
 
 # def load_trainer(args) -> Trainer:
@@ -308,10 +303,10 @@ def local_parse_args(args):
 def main(args):
     logging.info("started train process")
 
-    settings = config.load(args.runspec)
+    settings = lm.config.load(args.runspec)
 
     if args.dataset:
-        dscfg = config.load(args.dataset)
+        dscfg = lm.config.load(args.dataset)
         ds_location = os.path.split(args.dataset)[0] + "/*.tfrecord"
         settings["infeed"]["dataset"] = dscfg
         settings["infeed"]["file_pattern"] = ds_location
@@ -334,7 +329,7 @@ def main(args):
         json.dump(settings, fd, indent=2)
 
     # reload the settings from the save configuration
-    settings = config.load(runspec)
+    settings = lm.config.load(runspec)
 
     tconfig = TrainerConfig(**settings)
     trainer = Trainer(tconfig)

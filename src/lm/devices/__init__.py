@@ -1,8 +1,9 @@
-from typing import Dict, Union
-from . import tpu
+import multiprocessing
+from typing import Union
+
 from pydantic.dataclasses import dataclass
 
-import multiprocessing
+from . import tpu
 
 
 @dataclass
@@ -31,6 +32,6 @@ DeviceSpec = Union[CPUDeviceSpec, TPUDeviceSpec]
 
 def from_config(config: DeviceSpec):
     # only tpu supported
-    if type(config) is TPUDeviceSpec:
+    if isinstance(config, TPUDeviceSpec):
         return tpu.TPU(config)
     return CPU(config)

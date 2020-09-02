@@ -1,7 +1,5 @@
 from typing import Optional
 
-import tensorflow as tf
-from absl import logging
 from pydantic import BaseModel
 
 

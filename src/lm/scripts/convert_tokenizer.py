@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-import os
-
-import tokenizers
-
+import tensorflow as tf
 from absl import app, logging
 from absl.flags import argparse_flags
 
-import tensorflow as tf
+import tokenizers
 
 
 def parse_args(argv):

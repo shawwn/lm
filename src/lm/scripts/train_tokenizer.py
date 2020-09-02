@@ -1,20 +1,22 @@
 import os
 import random
-import argparse
-import shutil
 from glob import glob
-from pathlib import Path
 
-from lm_dataformat import Reader
-from tokenizers import Tokenizer, decoders, models, pre_tokenizers, processors, trainers
-from tokenizers.normalizers import Lowercase, NFKC, Sequence
-from tokenizers.pre_tokenizers import ByteLevel
-
-import constants
-
-from tqdm import auto as tqdm
 from absl import app, logging
 from absl.flags import argparse_flags
+
+import constants
+from tokenizers import (
+    Tokenizer,
+    decoders,
+    models,
+    pre_tokenizers,
+    processors,
+    trainers,
+)
+from tokenizers.normalizers import NFKC, Sequence  # , Lowercase
+
+# from tokenizers.pre_tokenizers import ByteLevel
 
 """
 Trains a tokenizer over a rawtxt corpus
@@ -55,7 +57,7 @@ def listfiles(location):
     return txt_files
 
 
-def setup_tokenizer(args):
+def setup_tokenizer(_):
     # Initialize a tokenizer
     tokenizer = Tokenizer(models.BPE())
 

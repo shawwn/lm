@@ -1,24 +1,21 @@
-import json
-from typing import Any, Dict, Optional, Union
-
 import cmd
-import mesh_tensorflow as mtf
+from typing import Dict
+
 import tensorflow as tf
-import tensorflow.compat.v1 as v1
 from absl import app, logging
 from absl.flags import argparse_flags
-from pydantic import BaseModel, validator
 from pydantic.dataclasses import dataclass
-
-from tensorflow.python.saved_model import loader
-from tensorflow.python.saved_model import signature_constants
-from tensorflow.python.saved_model import tag_constants
+from tensorflow.python.saved_model import (
+    loader,
+    signature_constants,
+    tag_constants,
+)
 
 import lm.cli.config
-import lm.models
-import lm.infeeds
-from lm.devices.tpu import TPUJobSpec, TPUInfeedSpec
 import lm.devices
+import lm.infeeds
+import lm.models
+from lm.devices.tpu import TPUInfeedSpec, TPUJobSpec
 
 
 @dataclass
@@ -36,7 +33,7 @@ class EvalConfig:
 
     @classmethod
     def from_config(cls, location):
-        config_dict = config.load(location)
+        config_dict = lm.config.load(location)
         return cls(**config_dict)
 
 
@@ -50,20 +47,20 @@ class Evaluator:
     def load_model(self):
         if not (self.model is None):
             return self.model
-        self.model = models.from_config(self.config.model)
+        self.model = lm.models.from_config(self.config.model)
         return self.model
 
     def load_infeed(self):
         if not (self.infeed is None):
             return self.infeed
-        self.infeed = inputs.from_config(self.config.infeed)
+        self.infeed = lm.infeeds.from_config(self.config.infeed)
         return self.infeed
 
     def create_jobspec(self):
         model = self.load_model()
         infeed = self.load_infeed()
         return TPUJobSpec(
-            function=self.model,
+            function=model,
             params={
                 # patch legacy config
                 "eval_steps": self.config.schedule.steps,
@@ -72,7 +69,7 @@ class Evaluator:
                 "steps_per_checkpoint": self.config.schedule.steps,
             },
             max_steps=self.config.schedule.steps,
-            use_tpu=type(self.config.device) is devices.TPUDeviceSpec,
+            use_tpu=type(self.config.device) is lm.devices.TPUDeviceSpec,
             model_path=self.config.model_path,
             # steps_per_iteration=self.config.schedule.steps_per_iteration,
             # steps_per_checkpoint=self.config.schedule.steps_per_checkpoint,
@@ -83,7 +80,7 @@ class Evaluator:
 
     def execute(self, jobspec):
         if self.device is None:
-            self.device = devices.from_config(self.config.device)
+            self.device = lm.devices.from_config(self.config.device)
         return self.device.execute(jobspec)
 
 
@@ -102,13 +99,6 @@ class InteractiveTask(cmd.Cmd):
             A dict of resulting tensors.
         """
 
-        feature_spec = {
-            "uid": tf.io.FixedLenFeature([], tf.string),
-            # "inputs": tf.io.FixedLenFeature([1024], tf.int64),
-            "content": tf.io.FixedLenFeature([], tf.string),  # raw string
-            # "tokens": tf.io.VarLenFeature(tf.int64) # raw tokens (not splitted to 128)
-        }
-
         graph = tf.Graph()
 
         self._sess = sess = tf.InteractiveSession(
@@ -116,8 +106,6 @@ class InteractiveTask(cmd.Cmd):
         )
 
         meta_graph = loader.load(sess, [tag_constants.SERVING], args.saved_model)
-
-        # describe_graph(meta_graph.graph_def)
 
         key_prediction = signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
 

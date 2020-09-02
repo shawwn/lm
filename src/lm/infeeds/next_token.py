@@ -1,15 +1,12 @@
-from typing import Dict, List, Optional
+from typing import List
 
 import numpy as np
 import tensorflow as tf
 from mesh_tensorflow import transformer
-from pydantic.dataclasses import dataclass
 from pydantic import BaseModel
 from tensorflow.python.platform import tf_logging as logging
-from tokenizers import Tokenizer
 
-import datasets
-from encoders import encode
+"Next Token module to predict the next token given the given context"
 
 
 class Seq2SeqGeneratorConfig(BaseModel):
@@ -112,10 +109,9 @@ class LanguageModelInput:
         )
         if not filenames:
             raise ValueError("No matching files found")
-        dataset = tf.data.TFRecordDataset(filenames, buffer_size=64 * 1024 * 1024)
+        ds = tf.data.TFRecordDataset(filenames, buffer_size=64 * 1024 * 1024)
         keys = ["target"]
         EOS = 1
-        PAD = 0
 
         def decode_example(serialized_example):
             """Return a dict of Tensors from a serialized tensorflow.Example."""

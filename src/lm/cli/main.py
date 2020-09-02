@@ -1,22 +1,10 @@
-import argparse
-import collections
 import importlib
-import json
-import os
 import random
-import sys
+
 import numpy as np
-
-from functools import partial
-from pathlib import Path
-from typing import Any, Dict, Optional
-
-from absl import app, logging
-from absl.flags import argparse_flags
-
-import mesh_tensorflow as mtf
 import tensorflow as tf
-
+from absl import app
+from absl.flags import argparse_flags
 from tensorflow.compat import v1
 
 """Main LM command line"""
@@ -28,15 +16,17 @@ def register_subcommand(module_name):
     m = importlib.import_module("lm.cli." + module_name)
     SUBCOMMANDS[module_name] = m
 
+
 def set_random_seed(args):
     seed = args.seed
-    random.seed(args.seed)
-    v1.set_random_seed(args.seed)
-    np.random.seed(args.seed)
+    random.seed(seed)
+    v1.set_random_seed(seed)
+    np.random.seed(seed)
+
 
 def fix_logger():
-    l = v1.get_logger()
-    l.propagate = False
+    v1.get_logger().propagate = False
+
 
 def parse_args(args):
     # Parse command line arguments
@@ -59,7 +49,6 @@ def parse_args(args):
     return args
 
 
-
 def main(args):
     cmd = SUBCOMMANDS.get(args.subparser, None)
     if cmd is None:
@@ -72,7 +61,7 @@ def main(args):
 def apprun():
     tf.disable_v2_behavior()
 
-    register_subcommand("preprocess")
+    register_subcommand("encode")
     register_subcommand("cleantxt")
     register_subcommand("configure")
     register_subcommand("train")
@@ -83,4 +72,4 @@ def apprun():
 
 
 if __name__ == "__main__":
-    app()
+    app(main)

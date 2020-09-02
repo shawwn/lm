@@ -1,4 +1,8 @@
+import collections
+
+import numpy as np
 import tensorflow as tf
+
 import farmhash
 
 "The only valid example formats accepted by the framework"
@@ -42,15 +46,16 @@ def read_example(example_proto) -> dict:
         ),
     }
 
-def read_example(example_proto, max_seq_len=1024) -> dict:
-    features = {
-        "id": tf.VarLenFeature(tf.uint64, default=-1),
-        "content": tf.VarLenFeature(tf.bytes, default=0),
-        "target": tf.VarLenFeature(tf.uint64, default=0),
-        "offset_start": tf.VarLenFeature(tf.uint64, default=0),
-        "offset_end": tf.VarLenFeature(tf.uint64, default=0),
-    }
-    return tf.parse_single_example(example_proto, features)
+
+# def read_example(example_proto, max_seq_len=1024) -> dict:
+#     features = {
+#         "id": tf.VarLenFeature(tf.uint64, default=-1),
+#         "content": tf.VarLenFeature(tf.bytes, default=0),
+#         "target": tf.VarLenFeature(tf.uint64, default=0),
+#         "offset_start": tf.VarLenFeature(tf.uint64, default=0),
+#         "offset_end": tf.VarLenFeature(tf.uint64, default=0),
+#     }
+#     return tf.parse_single_example(example_proto, features)
 
 
 def create_example(features: PreProcessedTextLine) -> tf.train.Example:
@@ -72,6 +77,7 @@ def transform_many_and_write_one_tfrecord(job):
                 example = create_example(PreProcessedTextLine(*features))
                 w.write(example.SerializeToString())
     return len(sources)
+
 
 def batch_tokenizer(tokenizer, txtfile_location):
     # just convert to the token ids, we will do adaptative padding on training time.

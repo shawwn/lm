@@ -1,7 +1,11 @@
 #!/usr/bin/env bash 
 
 # clean utf8
-lm cleantxt data/uds/\*.txt /tmp/cleantxt/ --force
+CLEANTXT_INPUT=data/uds
+CLEANTXT_OUTPUT=/tmp/cleantxt
+lm cleantxt ${CLEANTXT_INPUT} ${CLEANTXT_OUTPUT} --force
 
 # converts to tfrecord 
-lm preprocess data/uds/\*.txt /tmp/tfrecord/ --force
+ENCODE_INPUT=${CLEANTXT_OUTPUT}
+ENCODE_OUTPUT=/tmp/tfrecord
+lm encode --encoder gpt2 /tmp/cleantxt/\*.\* ${ENCODE_OUTPUT}

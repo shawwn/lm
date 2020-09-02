@@ -1,6 +1,7 @@
-from typing import Dict, List, Pattern, Optional
-from pydantic.dataclasses import dataclass
+from typing import List, Optional, Pattern
+
 from pydantic import BaseConfig
+from pydantic.dataclasses import dataclass
 
 
 class DatasetConfig(BaseConfig):
@@ -19,13 +20,12 @@ class TFRecordDataset(DatasetConfig):
     keys = ["content", "target"]
 
 
-def from_config(config: Dict):
-    if config["kind"] == "datasets.Seq2SeqDataset":
-        return seq2seq.Seq2SeqDataset(**config)
+# def from_config(config: Dict):
+#     if config["kind"] == "datasets.Seq2SeqDataset":
+#         return seq2seq.Seq2SeqDataset(**config)
 
-    print(config)
-    if config["kind"] == "datasets.TFRecordDataset":
-        config.pop("kind")
-        return TFRecordDataset(**config)
+#     if config["kind"] == "datasets.TFRecordDataset":
+#         config.pop("kind")
+#         return TFRecordDataset(**config)
 
-    raise ValueError("unknown dataset kind %s" % config["kind"])
+#     raise ValueError("unknown dataset kind %s" % config["kind"])

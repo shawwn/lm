@@ -1,17 +1,16 @@
-import os
 import json
+import os
 from typing import Dict
 
-from absl import logging
+import tensorflow as tf
+from absl import app, logging
 from absl.flags import argparse_flags
 from pydantic.dataclasses import dataclass
-
-import tensorflow as tf
 from tensorflow.compat import v1
-import lm.infeeds
-import lm.cli.config
-
 from tqdm import auto as tqdm
+
+import lm.config
+import lm.infeeds.seq2seq
 
 
 def parse_args(args, parser=None):
@@ -50,11 +49,7 @@ def example_producer(infeed):
                 result = sess.run(example)
                 yield result
             except tf.errors.OutOfRangeError:
-                logging.error(
-                    "dataset ended prematurely after only %d of the %d expected steps",
-                    i,
-                    steps,
-                )
+                logging.error("unexpected end of infinite dataset",)
 
 
 @dataclass
@@ -79,13 +74,13 @@ def example_proto(example):
 def main(args):
     logging.info("started synth process")
 
-    task_dict = config.load(args.taskspec)
+    task_dict = lm.config.load(args.taskspec)
     task = TaskSpec(**task_dict)
     if args.vocab_size:
         task.dataset.vocab_size = args.vocab_size
     if args.ctx_len:
         task.dataset.context_length = args.ctx_len
-    seq = inputs.AddNSequenceGenerator(task.dataset)
+    seq = lm.infeeds.seq2seq.AddNSequenceGenerator(task.dataset)
 
     tf.io.gfile.makedirs(args.output)
     dscfg = dict(

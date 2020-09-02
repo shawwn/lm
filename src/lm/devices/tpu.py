@@ -1,17 +1,14 @@
-import tensorflow as tf
-from typing import Callable, Any, Optional, Dict, Union
-from pydantic import AnyUrl
-from pydantic.dataclasses import dataclass
 import ipaddress
+from typing import Any, Callable, Dict, Optional, Union
 
+import tensorflow as tf
 from absl import logging
+from pydantic.dataclasses import dataclass
 from tensorflow.python.tpu import tpu_config, tpu_estimator
-from tensorflow_estimator.python.estimator import estimator as estimator_lib
-import functools
 
-"""
-TPU Configuration Module
-"""
+from tensorflow_estimator.python.estimator import estimator as estimator_lib
+
+"TPU Configuration Module"
 
 
 class Device:
@@ -67,10 +64,11 @@ class TPU:
         pass
 
     def execute(self, job: TPUJobSpec):
+        "execut the give job spec"
         cluster = self.resolve()
 
         run_config = tpu_config.RunConfig(
-            cluster=self._cluster,
+            cluster=cluster,
             model_dir=job.model_path,
             save_checkpoints_steps=None,  # Disable the default saver
             save_checkpoints_secs=None,  # Disable the default saver
