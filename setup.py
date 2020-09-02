@@ -29,12 +29,13 @@ test_requirements = [
 setup(
     author="Fabrizio Milo",
     author_email="fmilo@entropysource.com",
-    python_requires=">=3.7",
+    python_requires=">=3.6.9",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
+        "Programming Language :: Python :: 3.6.9",
         "Programming Language :: Python :: 3.7",
     ],
     description="End to End Language Model Pipeline built for training speed",

@@ -57,7 +57,6 @@ def apprun():
     register_subcommand("eval")
     register_subcommand("interactive")
     register_subcommand("synth")
-    # register_subcommand('predict')
     app.run(main, flags_parser=parse_args)
 
 
