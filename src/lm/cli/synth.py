@@ -9,7 +9,8 @@ from pydantic.dataclasses import dataclass
 import lm.config
 import lm.infeeds.seq2seq
 import lm.tasks
-
+import lm.tf
+from tqdm import auto as tqdm
 
 def parse_args(_, parser):
     # Parse command line arguments
@@ -21,12 +22,12 @@ def parse_args(_, parser):
     parser.add_argument(
         "output", type=str, help="processes the dataset and saves is to this location"
     )
-    parser.add_argument("--n_samples", type=int, default=10_000)
+    parser.add_argument("--n_samples", type=int, required=True)
     parser.add_argument("--vocab_size", type=int, default=256)
     parser.add_argument(
-        "--ctx_len",
+        "--max_seq_len",
         type=int,
-        help="Also called context size. The max input sequence of the final neural network.",
+        help="Also called context size. The max input sequence of the neural network.",
     )
 
 
@@ -44,26 +45,27 @@ def main(args):
     task = lm.registry.get_task(task_dict)
     if args.vocab_size:
         task.dataset.vocab_size = args.vocab_size
-    if args.ctx_len:
-        task.dataset.context_length = args.ctx_len
+    if args.max_seq_len:
+        task.dataset.max_sequence_length = args.max_seq_len
 
-    seq = task.infeed()
-    # seq = lm.infeeds.seq2seq.AddNSequenceGenerator(task.dataset)
-
+    # save info
     tf.io.gfile.makedirs(args.output)
-    dscfg = dict(
-        kind="datasets.TFRecordDataset",
-        format="seq2seq",
-        n_samples=args.n_samples,
-        vocab_size=task.dataset.vocab_size,
-        context_length=task.dataset.context_length,
-    )
-
     output_location = os.path.join(args.output, "dataset.info.json")
     with tf.io.gfile.GFile(output_location, "w") as w:
-        json.dump(dscfg, w, indent=2)
+        json.dump(task.dataset.dict(), w, indent=2)
+        logging.info("wrote %s", output_location)
 
+    # generate data
+    gen_fn = task.build_generator()
+
+    infeed = lambda params: lm.tf.from_generator(gen_fn)
+    params = {}
     output_location = os.path.join(args.output, "synth_%05d.tfrecord" % 1)
+    with tf.io.TFRecordWriter(output_location) as w:
+        it = iter(lm.tf.consume(infeed, params))
+        for _ in tqdm.tqdm(range(args.n_samples)):
+            ex = next(it)
+            w.write(ex)
 
     # train
     logging.info("completed synth process. dataset generated %s", args.output)

@@ -1,3 +1,5 @@
+"The only valid example formats accepted by the framework"
+
 import collections
 
 import numpy as np
@@ -5,10 +7,15 @@ import tensorflow as tf
 
 import farmhash
 
-"The only valid example formats accepted by the framework"
+CONTENT_KEY = 'content'
+TARGET_KEY = 'target'
 
 PreProcessedTextLine = collections.namedtuple(
     "PreProcessedTextLine", ["id", "content", "target", "offset_start", "offset_end"]
+)
+
+Seq2SeqSimpleExample = collections.namedtuple(
+    "Seq2SeqSimpleExample", [CONTENT_KEY, TARGET_KEY]
 )
 
 
@@ -103,6 +110,9 @@ def batch_tokenizer(tokenizer, txtfile_location):
         [[end for start, end in offsets] for offsets in batches["offset_mapping"]],
     )
 
+def _int64_list_feature(int_list):
+    """Returns an int64_list from a bool / enum / int / uint."""
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=int_list))
 
 def gen_serialization(ndigit):
     def serialize(tokens, idx):
@@ -110,9 +120,6 @@ def gen_serialization(ndigit):
         Creates a tf.Example message ready to be written to a file.
         """
 
-        def _int64_list_feature(int_list):
-            """Returns an int64_list from a bool / enum / int / uint."""
-            return tf.train.Feature(int64_list=tf.train.Int64List(value=int_list))
 
         # Create a dictionary mapping the feature name to the tf.Example-compatible
         # data type.
@@ -134,3 +141,22 @@ def gen_serialization(ndigit):
         return tf.io.parse_single_example(example, features=feature_spec)
 
     return serialize, deserialize
+
+
+def _serialize_seq2seq(self):
+    feature = {
+        CONTENT_KEY : _int64_list_feature(self.content),
+        TARGET_KEY: _int64_list_feature(self.target),
+    }
+
+    example = tf.train.Example(features=tf.train.Features(feature=feature))
+
+    return example.SerializeToString()
+    # raise ValueError('type %r not yet supported' % type(ex))
+    # feature_spec = {
+    #     "tokens": tf.io.FixedLenFeature([ndigit * 3], dtype=tf.dtypes.int64),
+    #     "idx": tf.io.FixedLenFeature([ndigit * 3], dtype=tf.dtypes.int64),
+    # }
+
+Seq2SeqSimpleExample.serialize = _serialize_seq2seq
+

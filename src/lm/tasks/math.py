@@ -97,13 +97,12 @@ class AdditionProducer:
     #         print(expression, "is: ", eval(expression.replace("=", "==")))
     #         break
 
-
-class SumOneDatasetConfig(BaseTaskDatasetConfig):
-    kind: str
-    context_length: int
-    seed: int
+class Seq2SeqDataset(BaseTaskDatasetConfig):
+    max_sequence_length: int
     vocab_size: int = 10
 
+class SumOneDatasetConfig(Seq2SeqDataset):
+    seed: int
 
 class SumOneConfig(BaseTaskConfig):
     dataset: SumOneDatasetConfig
@@ -115,9 +114,9 @@ class SumOneGen:
         super().__init__()
         self.config = SumOneDatasetConfig(**kwds)
 
-    def build_gen_func(self):
+    def __call__(self):
         vocab_size = self.config.vocab_size
-        context_length = self.config.context_length
+        context_length = self.config.max_sequence_length
         np.random.seed(self.config.seed)
 
         def generate_single_example():
@@ -135,16 +134,16 @@ class SumOneGen:
                 src_seq = np.random.randint(
                     low=num_special_tokens + 1,  # skip pad
                     high=vocab_size - num_special_tokens - 1,
-                    size=(1, length),
+                    size=(length, ),
                 )
                 tgt_seq = src_seq + 1  # add one to predict next
 
                 # pad to total sequence
                 padding = [pad] * (context_length - (1 + length + 1))
-                x = np.concatenate([bos, src_seq, eos, *padding], axis=1)
-                y = np.concatenate([bos, tgt_seq, eos, *padding], axis=1)
+                x = np.concatenate([bos, src_seq, eos, *padding], axis=0)
+                y = np.concatenate([bos, tgt_seq, eos, *padding], axis=0)
 
-                yield x, y  # [batch_size, context_length], [batch_size, context_length]
+                yield lm.examples.Seq2SeqSimpleExample(x, y).serialize()
 
         return generate_single_example
 
@@ -152,10 +151,13 @@ class SumOneGen:
 @lm.register_task("lm.tasks.SumOne", SumOneConfig)
 class SumOne(BaseTask):
     def __init__(self, **kwds):
-        super().__init__(**kwds)
+        super().__init__()
         self.__dict__.update(dict(SumOneConfig(**kwds)))
 
-    def infeed(self):
+    def build_generator(self):
+        return SumOneGen(**self.dataset.dict())
+
+    def build_infeed(self):
         # base on the kind of infeed we create the right dataset
         if self.infeed.kind.endswith("Generator"):
             dsgen = lm.get_infeed(self.infeed)

@@ -8,9 +8,13 @@ local AdditionProducer(seed=1337, ndigits=2) = {
     vocab_size: 10,
 };
 
+local Source() = {
+    kind: "generator",
+};
+
 {
     kind: "lm.tasks.Addition",
     description: "sequence to sequence",
     dataset: AdditionProducer(),
-    infeed: infeeds.ExampleGenerator(producer=self.dataset)
+    infeed: infeeds.TFRecordDatasetReader(source={})
 }

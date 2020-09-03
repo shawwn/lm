@@ -2,14 +2,14 @@
 set -e
 
 VOCAB_SIZE=16
-CTX_LEN=8
+MAX_SEQ_LEN=8
 TASK_NAME=sum_one
 
 SYNTH_OUTPUT=/tmp/${TASK_NAME}/train
 
-lm synth etc/lm/tasks/add_one.jsonnet ${SYNTH_OUTPUT} \
+lm synth etc/lm/tasks/sum_one.jsonnet ${SYNTH_OUTPUT} \
     --vocab_size ${VOCAB_SIZE} \
-    --ctx_len ${CTX_LEN} \
+    --max_seq_len ${MAX_SEQ_LEN} \
     --n_samples 10000
 
 # # train encoder
