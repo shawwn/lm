@@ -108,12 +108,7 @@ venv.bak/
 
 logs/
 *.log
-test_*
-test/
-.vscode
 
-
-run_configs/
 .DS_Store
 .trash
 trash
