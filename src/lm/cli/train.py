@@ -16,6 +16,7 @@ import lm.infeeds
 import lm.models
 from lm.devices.tpu import TPUInfeedSpec, TPUJobSpec
 
+from lm.tasks.base import BaseTaskConfig
 
 def serving_input_receiver_fn():
     feature = tf.placeholder(tf.int32, shape=[None, 8], name="tokens")
@@ -30,9 +31,11 @@ class ScheduleSpec:
 
 
 @dataclass
-class RunSpec:
+class GradientSpec:
     learning_rate: Dict
     optimizer: Dict
+    gradient_clipping: float
+    weight_decay: float
 
 
 @dataclass
@@ -40,12 +43,13 @@ class TrainerConfig:
     device: Dict
     infeed: Dict
     model: Dict
-    other: Dict
-    regularization: Dict
-    runspec: RunSpec
+    # other: Dict
+    # regularization: Dict
+    gradients: GradientSpec
     schedule: ScheduleSpec
     # checkpoints_location: str
     model_path: str
+    task: Dict
 
 
 class Trainer:
@@ -65,13 +69,13 @@ class Trainer:
     def load_model(self):
         if not (self.model is None):
             return self.model
-        self.model = lm.models.from_config(self.config.model)
+        self.model = lm.get_model(self.config.model)
         return self.model
 
     def load_infeed(self):
         if not (self.infeed is None):
             return self.infeed
-        self.infeed = lm.infeeds.from_config(self.config.infeed)
+        self.infeed = lm.infeeds.get_infeed(self.config.infeed)
         return self.infeed
 
     def create_train_jobspec(self):
@@ -166,7 +170,7 @@ def check_dataset(trainer, args):
 def parse_args(args, parser=None):
     # Parse command line arguments
     parser.add_argument(
-        "runspec",
+        "trainspec",
         type=str,
         help="the json file specifiing the configuration for this run",
     )
@@ -185,7 +189,20 @@ def parse_args(args, parser=None):
     parser.add_argument(
         "--dataset", type=str, help="location to a dataset jsonnet configuration file."
     )
+    parser.add_argument(
+        "--task", type=str, help="location to a task jsonnet configuration file."
+    )
+    # parser.add_argument(
+    #     "--project",
+    #     default=None,
+    #     help="Project name for the Cloud TPU-enabled project. If not specified, we "
+    #     "will attempt to automatically detect the GCE project from metadata.")
 
+    # parser.add_argument(
+    #     "--zone",
+    #     default=None,
+    #     help="GCE zone where the Cloud TPU is located in. If not specified, we "
+    #     "will attempt to automatically detect the GCE project from metadata.")
 
 def local_parse_args(args):
     parser = argparse_flags.ArgumentParser()
@@ -196,22 +213,26 @@ def local_parse_args(args):
 def main(args):
     logging.info("started train process")
 
-    settings = lm.config.load(args.runspec)
+    settings = lm.config.load(args.trainspec)
 
+    # patch config
+    if args.task:
+        settings["task"] = lm.config.load(args.task)
+    
     if args.dataset:
         dscfg = lm.config.load(args.dataset)
         ds_location = os.path.split(args.dataset)[0] + "/*.tfrecord"
         settings["infeed"]["dataset"] = dscfg
         settings["infeed"]["file_pattern"] = ds_location
-        settings["infeed"]["max_sequence_length"] = dscfg["context_length"]
+        settings["infeed"]["max_sequence_length"] = dscfg["max_sequence_length"]
 
-    # patch config
-    if args.tpu:
+    if args.device:
         settings["device"]["kind"] = "tpu"
-        settings["device"]["address"] = args.tpu
+        settings["device"]["address"] = args.device
 
     if args.steps:
         settings["schedule"]["steps"] = args.steps
+    
 
     logging.info("final config %r", settings)
 

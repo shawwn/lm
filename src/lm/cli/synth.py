@@ -62,14 +62,20 @@ def main(args):
         return lm.tf.from_generator(gen_fn)
 
     params = {}
-    output_location = os.path.join(args.output, "synth_%05d.tfrecord" % 1)
-    with tf.io.TFRecordWriter(output_location) as w:
-        it = iter(lm.tf.consume(infeed, params))
-        for _ in tqdm.tqdm(range(args.n_samples)):
-            ex = next(it)
-            w.write(ex)
-
-    # train
+               
+    num_examples = 0
+    with tempfile.NamedTemporaryFile(delete=True) as tmp:
+        with tf.io.TFRecordWriter(tmp.name) as w:
+            it = iter(lm.tf.consume(infeed, params))
+            for _ in tqdm.tqdm(range(args.n_samples)):
+                ex = next(it)
+                w.write(ex)
+                num_examples += 1
+        i = 0
+        total = 1 
+        dst = os.path.join(args.output, "synth_%05d-%05d_%05d.tfrecord" % (i, total, num_examples))
+        tf.io.gfile.copy(tmp.name, dst, overwrite=True)
+    
     logging.info("completed synth process. dataset generated %s", args.output)
 
 
