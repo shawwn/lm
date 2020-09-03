@@ -67,7 +67,8 @@ def load(resource: str):
             }
         else:
             raise ValueError(
-                "directory %s provided but directory does not contain any info" % resource
+                "directory %s provided but directory does not contain any info"
+                % resource
             )
     path, ext = os.path.splitext(resource)
     if ext in (".json",):

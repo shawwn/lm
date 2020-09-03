@@ -9,6 +9,6 @@ Sphinx==1.8.5
 twine==1.14.0
 black
 isort
-
+mock==4.0.2
 pytest==6.0.0
 pytest-runner==5.1

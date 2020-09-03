@@ -11,12 +11,12 @@ class UnitTests(absltest.TestCase):
         self.addition = lm.tasks.math.Addition(**taskcfg)
         return super().setUp()
 
-    def test_load_from_config(self):
-        addition = self.addition
-        self.assertTrue(addition.dataset)
-        self.assertTrue(addition.dataset.vocab_size)
-        self.assertTrue(addition.kind)
-        self.assertTrue(addition.description)
+    # def test_load_from_config(self):
+    #     addition = self.addition
+    #     self.assertTrue(addition.dataset)
+    #     self.assertTrue(addition.dataset.vocab_size)
+    #     self.assertTrue(addition.kind)
+    #     self.assertTrue(addition.description)
 
     # def test_generate(self):
     #     infeed = self.addition.build_infeed()

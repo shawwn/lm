@@ -62,7 +62,7 @@ def main(args):
         return lm.tf.from_generator(gen_fn)
 
     params = {}
-               
+
     num_examples = 0
     with tempfile.NamedTemporaryFile(delete=True) as tmp:
         with tf.io.TFRecordWriter(tmp.name) as w:
@@ -72,10 +72,12 @@ def main(args):
                 w.write(ex)
                 num_examples += 1
         i = 0
-        total = 1 
-        dst = os.path.join(args.output, "synth_%05d-%05d_%05d.tfrecord" % (i, total, num_examples))
+        total = 1
+        dst = os.path.join(
+            args.output, "synth_%05d-%05d_%05d.tfrecord" % (i, total, num_examples)
+        )
         tf.io.gfile.copy(tmp.name, dst, overwrite=True)
-    
+
     logging.info("completed synth process. dataset generated %s", args.output)
 
 

@@ -15,8 +15,8 @@ import lm.devices
 import lm.infeeds
 import lm.models
 from lm.devices.tpu import TPUInfeedSpec, TPUJobSpec
-
 from lm.tasks.base import BaseTaskConfig
+
 
 def serving_input_receiver_fn():
     feature = tf.placeholder(tf.int32, shape=[None, 8], name="tokens")
@@ -167,6 +167,59 @@ def check_dataset(trainer, args):
                 )
 
 
+from contextlib import ContextDecorator, ExitStack
+
+
+class TrainerCPU(ContextDecorator):
+    def __init__(self, config: TrainerCPUConfig):
+        self.config = config
+        self._sess = None
+        self._graph = None
+
+    def __enter__(self):
+        print("creating graph")
+        self._graph = tf.Graph()
+        self._graph.as_default().__enter__()
+        self._sess = tf.Session(graph=self._graph)
+        self._sess.__enter__()
+
+    def __exit__(self, exc_type, exc, exc_tb):
+        self._sess = None
+
+    def __call__(self, add_example_producer):
+        with ExitStack(), self:
+            ds = add_example_producer()
+            inputs = self.add_input_pipeline(ds)
+            model = self.add_model(inputs)
+            for epoch in self.epoch_iterator():
+                for result in self.step(model, inputs):
+                    yield result
+
+    def add_model(self, inputs):
+        model_factory = model_factory_registry[self.config.model_name].from_config(
+            self.config.model_config
+        )
+        model_graph = model_factory(inputs, params={})
+        return model_graph
+
+    def add_input_pipeline(self, dataset):
+        it = tf.data.make_one_shot_iterator(ds)
+        x = it.get_next()
+        return x
+
+    def step(self, model, example_batch):
+        # for example_batch in dataset:
+        while True:
+            try:
+                yield self._sess.run(inputs=example_batch, outputs=model.outputs)
+            except tf.errors.OutOfRangeError:
+                break
+
+    def epoch_iterator(self):
+        for e in range(self.config.experiment_config.num_epochs):
+            yield
+
+
 def parse_args(args, parser=None):
     # Parse command line arguments
     parser.add_argument(
@@ -204,6 +257,7 @@ def parse_args(args, parser=None):
     #     help="GCE zone where the Cloud TPU is located in. If not specified, we "
     #     "will attempt to automatically detect the GCE project from metadata.")
 
+
 def local_parse_args(args):
     parser = argparse_flags.ArgumentParser()
     parse_args(args, parser)
@@ -218,7 +272,7 @@ def main(args):
     # patch config
     if args.task:
         settings["task"] = lm.config.load(args.task)
-    
+
     if args.dataset:
         dscfg = lm.config.load(args.dataset)
         ds_location = os.path.split(args.dataset)[0] + "/*.tfrecord"
@@ -232,7 +286,6 @@ def main(args):
 
     if args.steps:
         settings["schedule"]["steps"] = args.steps
-    
 
     logging.info("final config %r", settings)
 
