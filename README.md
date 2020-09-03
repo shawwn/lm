@@ -4,11 +4,11 @@ title: Language Model (lm) End to End Pipeline
 
 [![image](https://img.shields.io/pypi/v/lm.svg)](https://pypi.python.org/pypi/lm)
 
-[![image](https://img.shields.io/travis/Mistobaan/lm.svg)](https://travis-ci.com/Mistobaan/lm)
+[![image](https://img.shields.io/travis/NeuroArchitect/lm.svg)](https://travis-ci.com/NeuroArchitect/lm)
 
 [![Documentation Status](https://readthedocs.org/projects/lm/badge/?version=latest)](https://lm.readthedocs.io/en/latest/?badge=latest)
 
-[![Updates](https://pyup.io/repos/github/Mistobaan/lm/shield.svg)](https://pyup.io/repos/github/Mistobaan/lm/)
+[![Updates](https://pyup.io/repos/github/NeuroArchitect/lm/shield.svg)](https://pyup.io/repos/github/NeuroArchitect/lm/)
 
 End to End Language Model Pipeline built for training speed
 

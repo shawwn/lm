@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/Mistobaan/lm
+    $ git clone git://github.com/NeuroArchitect/lm
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/Mistobaan/lm/tarball/master
+    $ curl -OJL https://github.com/NeuroArchitect/lm/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/Mistobaan/lm
-.. _tarball: https://github.com/Mistobaan/lm/tarball/master
+.. _Github repo: https://github.com/NeuroArchitect/lm
+.. _tarball: https://github.com/NeuroArchitect/lm/tarball/master
