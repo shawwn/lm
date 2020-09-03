@@ -1,6 +1,5 @@
 "Base infeed class"
 import abc
-from typing import Dict, Optional
 
 import tensorflow as tf
 from pydantic import BaseModel

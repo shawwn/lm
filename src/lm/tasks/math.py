@@ -39,7 +39,7 @@ class Addition(BaseTask):
 
 @lm.register_dataset("lm.datasets.AdditionProducer", None)
 class AdditionProducer:
-    """ 
+    """
     Encodes a simple equation A + B = C in an encoder friendly format
     inspired by github.com/karpathy/mingGPT
     """
@@ -97,12 +97,15 @@ class AdditionProducer:
     #         print(expression, "is: ", eval(expression.replace("=", "==")))
     #         break
 
+
 class Seq2SeqDataset(BaseTaskDatasetConfig):
     max_sequence_length: int
     vocab_size: int = 10
 
+
 class SumOneDatasetConfig(Seq2SeqDataset):
     seed: int
+
 
 class SumOneConfig(BaseTaskConfig):
     dataset: SumOneDatasetConfig
@@ -134,7 +137,7 @@ class SumOneGen:
                 src_seq = np.random.randint(
                     low=num_special_tokens + 1,  # skip pad
                     high=vocab_size - num_special_tokens - 1,
-                    size=(length, ),
+                    size=(length,),
                 )
                 tgt_seq = src_seq + 1  # add one to predict next
 

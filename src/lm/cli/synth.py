@@ -4,13 +4,13 @@ import os
 import tensorflow as tf
 from absl import app, logging
 from absl.flags import argparse_flags
-from pydantic.dataclasses import dataclass
+from tqdm import auto as tqdm
 
 import lm.config
 import lm.infeeds.seq2seq
 import lm.tasks
 import lm.tf
-from tqdm import auto as tqdm
+
 
 def parse_args(_, parser):
     # Parse command line arguments
@@ -58,7 +58,9 @@ def main(args):
     # generate data
     gen_fn = task.build_generator()
 
-    infeed = lambda params: lm.tf.from_generator(gen_fn)
+    def infeed(params):
+        return lm.tf.from_generator(gen_fn)
+
     params = {}
     output_location = os.path.join(args.output, "synth_%05d.tfrecord" % 1)
     with tf.io.TFRecordWriter(output_location) as w:

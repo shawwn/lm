@@ -1,5 +1,5 @@
 "Module to define a generator based infeed"
-from typing import Dict, Iterable, Callable
+from typing import Callable, Dict, Iterable
 
 import tensorflow as tf
 from absl import logging
@@ -11,11 +11,10 @@ from lm.infeeds.base import Infeed
 def from_generator(example_generator: Callable) -> tf.data.Dataset:
     "uses a numpy generator to generate serialized examples"
     dataset = tf.data.Dataset.from_generator(
-        example_generator(),
-        output_types=tf.string,
-        output_shapes=None,
+        example_generator(), output_types=tf.string, output_shapes=None,
     )
     return dataset
+
 
 def consume(infeed: Infeed, params: Dict) -> Iterable:
     "consumes an infeed"

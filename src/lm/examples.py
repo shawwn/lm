@@ -7,8 +7,8 @@ import tensorflow as tf
 
 import farmhash
 
-CONTENT_KEY = 'content'
-TARGET_KEY = 'target'
+CONTENT_KEY = "content"
+TARGET_KEY = "target"
 
 PreProcessedTextLine = collections.namedtuple(
     "PreProcessedTextLine", ["id", "content", "target", "offset_start", "offset_end"]
@@ -110,16 +110,17 @@ def batch_tokenizer(tokenizer, txtfile_location):
         [[end for start, end in offsets] for offsets in batches["offset_mapping"]],
     )
 
+
 def _int64_list_feature(int_list):
     """Returns an int64_list from a bool / enum / int / uint."""
     return tf.train.Feature(int64_list=tf.train.Int64List(value=int_list))
+
 
 def gen_serialization(ndigit):
     def serialize(tokens, idx):
         """
         Creates a tf.Example message ready to be written to a file.
         """
-
 
         # Create a dictionary mapping the feature name to the tf.Example-compatible
         # data type.
@@ -145,7 +146,7 @@ def gen_serialization(ndigit):
 
 def _serialize_seq2seq(self):
     feature = {
-        CONTENT_KEY : _int64_list_feature(self.content),
+        CONTENT_KEY: _int64_list_feature(self.content),
         TARGET_KEY: _int64_list_feature(self.target),
     }
 
@@ -158,5 +159,5 @@ def _serialize_seq2seq(self):
     #     "idx": tf.io.FixedLenFeature([ndigit * 3], dtype=tf.dtypes.int64),
     # }
 
-Seq2SeqSimpleExample.serialize = _serialize_seq2seq
 
+Seq2SeqSimpleExample.serialize = _serialize_seq2seq

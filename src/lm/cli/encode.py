@@ -9,8 +9,8 @@ from absl.flags import argparse_flags
 from tqdm import auto as tqdm
 
 import lm.config
-import lm.examples
 import lm.encoders
+import lm.examples
 
 
 def readlines_txt(src):
@@ -55,9 +55,7 @@ def parallel(src_dst_list, total):
     pool = Pool(processes=count)
     ret = 0
     for i in tqdm.tqdm(
-        pool.imap(
-            lm.examples.transform_many_and_write_one_tfrecord, src_dst_list
-        ),
+        pool.imap(lm.examples.transform_many_and_write_one_tfrecord, src_dst_list),
         total=total,
     ):
         ret += i

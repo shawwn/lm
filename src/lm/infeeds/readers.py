@@ -2,13 +2,14 @@
 from typing import Dict
 
 import tensorflow as tf
+from absl import logging
 
 import lm
 
 from .base import Infeed, InfeedConfig
 
 
-class TFRecordDatasetReader(InfeedConfig):
+class TFRecordDatasetReaderConfig(InfeedConfig):
     producer: Dict
 
 
@@ -16,21 +17,21 @@ class TFRecordDatasetReader(InfeedConfig):
 class TFRecordDatasetReader(Infeed):
     def __init__(self, **kwds):
         super().__init__()
-        self.__dict__.update(dict(ExampleGeneratorConfig(**kwds)))
+        self.__dict__.update(dict(TFRecordDatasetReaderConfig(**kwds)))
 
-    def __call__(self, params: Dict):
-        producer = self.create_producer()
+    # def __call__(self, params: Dict):
+    #     producer = self.create_producer()
 
-        batch_size = params["batch_size"]
-        context_length = producer.context_length
-        example_sequence_shape = tf.TensorShape((batch_size, context_length))
+    #     batch_size = params["batch_size"]
+    #     context_length = producer.context_length
+    #     example_sequence_shape = tf.TensorShape((batch_size, context_length))
 
-        dataset = tf.data.Dataset.from_generator(
-            producer,
-            output_types=(tf.int64, tf.int64),
-            output_shapes=(example_sequence_shape, example_sequence_shape),
-        )
-        return dataset
+    #     dataset = tf.data.Dataset.from_generator(
+    #         producer,
+    #         output_types=(tf.int64, tf.int64),
+    #         output_shapes=(example_sequence_shape, example_sequence_shape),
+    #     )
+    #     return dataset
 
     def __call__(self, params):
         """Input function which provides a single batch for train or eval."""

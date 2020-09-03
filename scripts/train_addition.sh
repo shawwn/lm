@@ -14,7 +14,6 @@ lm synth etc/lm/tasks/addition.jsonnet /tmp/addition/output/train \
 # train encoder
 TOKENIZER_INPUT=${CLEANTXT_OUTPUT}
 TOKENIZER_OUTPUT=/tmp/tokenizer/
-# lm_train_tokenizer --vocab_size 1010 --input ${TOKENIZER_INPUT}/ --output ${TOKENIZER_OUTPUT}
 lm train \
     /content/GPTNeo/configs/training/seq2seq_add_one_tpu-v3-8.jsonnet \
     --dataset gs://{GCS_BUCKET}/{GCS_LOCATION} \
