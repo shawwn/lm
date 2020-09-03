@@ -1,53 +1,11 @@
 import collections
 import functools
 from typing import Dict
+
 from absl import logging
 
 REGISTRY = collections.defaultdict(dict)
 CLASS_NAMES = set()
-
-def register_model(f, name, config):
-    assert not (name in REGISTRY), "model with that name already present"
-    REGISTRY["models"][name] = f
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwds):
-        return f(*args, **kwds)
-
-    return wrapper
-
-
-def register_dataset(f, name, config):
-    assert not (name in REGISTRY), "model with that name already present"
-    REGISTRY["datasets"][name] = f
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwds):
-        return f(*args, **kwds)
-
-    return wrapper
-
-
-def register_infeed(f, name, config):
-    assert not (name in REGISTRY), "model with that name already present"
-    REGISTRY["infeeds"][name] = f
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwds):
-        return f(*args, **kwds)
-
-    return wrapper
-
-
-def register_encoder(f, name, config):
-    assert not (name in REGISTRY), "model with that name already present"
-    REGISTRY["encoders"][name] = f
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwds):
-        return f(*args, **kwds)
-
-    return wrapper
 
 
 def register(cls, kind, name, config):
@@ -60,9 +18,31 @@ def register(cls, kind, name, config):
 
     return wrapper
 
+
 def register_task(name, config=None):
-    logging.info('task %s registered', name)
-    return functools.partial(register, kind='tasks', name=name, config=config)
+    logging.debug("task %s registered", name)
+    return functools.partial(register, kind="tasks", name=name, config=config)
+
+
+def register_infeed(name, config=None):
+    logging.debug("infeed %s registered", name)
+    return functools.partial(register, kind="infeeds", name=name, config=config)
+
+
+def register_dataset(name, config=None):
+    logging.debug("dataset %s registered", name)
+    return functools.partial(register, kind="datasets", name=name, config=config)
+
+
+def register_encoder(name, config=None):
+    logging.debug("encoders %s registered", name)
+    return functools.partial(register, kind="encoders", name=name, config=config)
+
+
+def register_model(name, config=None):
+    logging.debug("model %s registered", name)
+    return functools.partial(register, kind="models", name=name, config=config)
+
 
 def model_from_config(config: Dict):
     model = config["kind"]
@@ -79,13 +59,20 @@ def dataset_from_config(config: Dict):
     return REGISTRY["datasets"][model](**config)
 
 
-# def from_config(config: Dict):
-#     cfg = InfeedConfig(**config)
-#     infeed = Seq2SeqTFRecordInfeed(cfg)
-#     return infeed
+def get_object(group, config):
+    if isinstance(config, dict):
+        kind = config.get("kind", None)
+        if kind is None:
+            raise ValueError(
+                'invalid task configuration. "kind" key was not found in dictionary'
+            )
+    else:
+        kind = config.kind
+        config = dict(config)
+    return REGISTRY[group][kind](**config)
 
-def get_task(config):
-    kind = config.get('kind', None)
-    if kind is None:
-        raise ValueError('invalid task configuration. "kind" key was not found in dictionary')
-    return REGISTRY['tasks'][kind](**config)
+
+get_dataset = functools.partial(get_object, "datasets")
+get_model = functools.partial(get_object, "models")
+get_task = functools.partial(get_object, "tasks")
+get_infeed = functools.partial(get_object, "infeeds")

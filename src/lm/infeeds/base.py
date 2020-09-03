@@ -1,18 +1,29 @@
 "Base infeed class"
+import abc
 from typing import Dict, Optional
 
-from pydantic.dataclasses import dataclass
+import tensorflow as tf
+from pydantic import BaseModel
 
 
-@dataclass
-class InfeedConfig:
+class InfeedConfig(BaseModel):
     batch_size: int
     dataset: Dict
     max_sequence_length: int
     file_pattern: Optional[str]
 
 
-class Infeed:
+class Infeed(abc.ABC):
+    """
+    An infeed abstracts the operation of creating a stream of examples.
+    """
+
     batch_size: int
     max_sequence_length: int
     dataset: object
+
+    @abc.abstractmethod
+    def __call__(self, *args, **kwds) -> tf.data.Dataset:
+        """
+        Configures and Allocates a tensorflow dataset
+        """

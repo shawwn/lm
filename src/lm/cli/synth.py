@@ -5,12 +5,11 @@ import tensorflow as tf
 from absl import app, logging
 from absl.flags import argparse_flags
 from pydantic.dataclasses import dataclass
-from tensorflow.compat import v1
-from tqdm import auto as tqdm
 
 import lm.config
 import lm.infeeds.seq2seq
 import lm.tasks
+
 
 def parse_args(_, parser):
     # Parse command line arguments
@@ -65,7 +64,6 @@ def main(args):
         json.dump(dscfg, w, indent=2)
 
     output_location = os.path.join(args.output, "synth_%05d.tfrecord" % 1)
-
 
     # train
     logging.info("completed synth process. dataset generated %s", args.output)

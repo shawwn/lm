@@ -1,24 +1,36 @@
-"Module to define a generator based infeed"
-from .base import Infeed
-from tensorflow.compat import v1
+"an infeed generator "
+from typing import Dict
+
 import tensorflow as tf
 
-from absl import logging
+import lm
 
-class InfeedGeneratorWrapper(Infeed):
-    def __init__(self, infeed:Infeed):
+from .base import Infeed, InfeedConfig
+
+
+class ExampleGeneratorConfig(InfeedConfig):
+    producer: Dict
+
+
+@lm.register_infeed("lm.infeeds.ExampleGenerator")
+class ExampleGenerator(Infeed):
+    def __init__(self, **kwds):
         super().__init__()
-        self.infeed = infeed
+        self.__dict__.update(dict(ExampleGeneratorConfig(**kwds)))
 
-    def __call__(self):
-        with v1.Session(graph=tf.Graph()) as sess:
-            ds = self.infeed({"batch_size": 8})
+    def create_producer(self):
+        return self.get_dataset(self.producer)
 
-            it = ds.make_one_shot_iterator()
-            example = it.get_next()
-            while True:
-                try:
-                    yield sess.run(example)
-                except tf.errors.OutOfRangeError:
-                    logging.error("unexpected end of infinite dataset",)
+    def __call__(self, params: Dict):
+        producer = self.create_producer()
 
+        batch_size = params["batch_size"]
+        context_length = producer.context_length
+        example_sequence_shape = tf.TensorShape((batch_size, context_length))
+
+        dataset = tf.data.Dataset.from_generator(
+            producer,
+            output_types=(tf.int64, tf.int64),
+            output_shapes=(example_sequence_shape, example_sequence_shape),
+        )
+        return dataset

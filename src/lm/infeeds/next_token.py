@@ -1,12 +1,11 @@
+"Next Token module to predict the next token given the given context"
+
 from typing import List
 
-import numpy as np
 import tensorflow as tf
 from mesh_tensorflow import transformer
 from pydantic import BaseModel
 from tensorflow.python.platform import tf_logging as logging
-
-"Next Token module to predict the next token given the given context"
 
 
 class Seq2SeqGeneratorConfig(BaseModel):
@@ -20,59 +19,6 @@ class RandomTokenGeneratorConfig(Seq2SeqGeneratorConfig):
 
 class AddNSequenceGeneratorConfig(RandomTokenGeneratorConfig):
     n: int = 1
-
-
-class AddNSequenceGenerator:
-    """Generates Seq2Seq that are added by N"""
-
-    def __init__(self, config: AddNSequenceGeneratorConfig):
-        super().__init__()
-        self.config = config
-        assert self.config.context_length >= (
-            3 + 1
-        )  # 4 for the tokens and at least one number is needed
-
-    def __call__(self, params):
-        batch_size = params["batch_size"]
-        vocab_size = self.config.vocab_size
-        context_length = self.config.context_length
-        np.random.seed(self.config.seed)
-
-        def _generate():
-            while True:
-                # special tokens
-                shape = (batch_size, 1)
-                pad = np.full(shape, 0)  # pad token
-                eos = np.full(shape, 1)  # end of sentence token
-                bos = np.full(shape, 2)  # begin of sentence token
-                num_special_tokens = 3
-
-                # compute a good length
-                length = context_length - num_special_tokens
-
-                src_seq = np.random.randint(
-                    low=num_special_tokens + 1,  # skip pad
-                    high=vocab_size - num_special_tokens - 1,
-                    size=(batch_size, length),
-                )
-                tgt_seq = src_seq + 1  # add one to predict next
-
-                # pad to total sequence
-                padding = [pad] * (context_length - (1 + length + 1))
-                x = np.concatenate([bos, src_seq, eos, *padding], axis=1)
-                y = np.concatenate([bos, tgt_seq, eos, *padding], axis=1)
-
-                yield x, y  # [batch_size, context_length], [batch_size, context_length]
-
-        context_length = self.config.context_length
-        example_sequence_shape = tf.TensorShape((batch_size, context_length))
-
-        dataset = tf.data.Dataset.from_generator(
-            _generate,
-            output_types=(tf.int64, tf.int64),
-            output_shapes=(example_sequence_shape, example_sequence_shape),
-        )
-        return dataset
 
 
 class LanguageModelInputConfig:

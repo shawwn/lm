@@ -1,16 +1,16 @@
+local infeeds = import "infeeds.libsonnet";
 
-local AdditionGenerator = function(
-                                ndigits=3, 
-                                seed=1337) {
-        kind: 'lm.infeeds.Generator',
-        seed: seed,
-        ndigits: ndigits,
-        context_length: ndigits * 3,
-        vocab_size: 10,
-    };
+local AdditionProducer(seed=1337, ndigits=2) = {
+    kind: "lm.datasets.AdditionProducer",
+    seed: seed,
+    ndigits: ndigits,
+    context_length: ndigits * 3,
+    vocab_size: 10,
+};
 
 {
     kind: "lm.tasks.Addition",
     description: "sequence to sequence",
-    dataset: AdditionGenerator(ndigits=3)
+    dataset: AdditionProducer(),
+    infeed: infeeds.ExampleGenerator(producer=self.dataset)
 }

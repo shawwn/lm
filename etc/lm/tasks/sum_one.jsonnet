@@ -1,7 +1,7 @@
 local infeeds = import "infeeds.libsonnet";
 
 local SumOneProducer(seed=1337, ndigits=2) = {
-    kind: "lm.tasks.SumOneProducer",
+    kind: "lm.datasets.SumOneGen",
     seed: seed,
     ndigits: ndigits,
     context_length: ndigits * 3,

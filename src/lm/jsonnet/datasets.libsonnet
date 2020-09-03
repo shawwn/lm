@@ -22,5 +22,4 @@
         vocab_size: vocab_size,
     },
 
-
 }

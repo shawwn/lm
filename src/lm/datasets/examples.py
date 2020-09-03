@@ -102,3 +102,35 @@ def batch_tokenizer(tokenizer, txtfile_location):
         [[start for start, end in offsets] for offsets in batches["offset_mapping"]],
         [[end for start, end in offsets] for offsets in batches["offset_mapping"]],
     )
+
+
+def gen_serialization(ndigit):
+    def serialize(tokens, idx):
+        """
+        Creates a tf.Example message ready to be written to a file.
+        """
+
+        def _int64_list_feature(int_list):
+            """Returns an int64_list from a bool / enum / int / uint."""
+            return tf.train.Feature(int64_list=tf.train.Int64List(value=int_list))
+
+        # Create a dictionary mapping the feature name to the tf.Example-compatible
+        # data type.
+        feature = {
+            "tokens": _int64_list_feature(tokens),
+            "idx": _int64_list_feature(idx),
+        }
+
+        example = tf.train.Example(features=tf.train.Features(feature=feature))
+
+        return example.SerializeToString()
+
+    feature_spec = {
+        "tokens": tf.io.FixedLenFeature([ndigit * 3], dtype=tf.dtypes.int64),
+        "idx": tf.io.FixedLenFeature([ndigit * 3], dtype=tf.dtypes.int64),
+    }
+
+    def deserialize(example):
+        return tf.io.parse_single_example(example, features=feature_spec)
+
+    return serialize, deserialize
