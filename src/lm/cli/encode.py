@@ -162,12 +162,13 @@ def main(argv):
     )
 
     def getdst(name, idx, total):
+        filename_format = '%s-%05d-of-%05d' # standard tensorflow shard naming convention: https://www.tensorflow.org/api_docs/cc/class/tensorflow/ops/sharded-filename
         if args.format == "tfrecord":
-          return os.path.join(args.output, "%s_%05d_%05d.tfrecord" % (name, idx, total))
+          return os.path.join(args.output, (filename_format + ".tfrecord") % (name, idx, total))
         elif args.format == "tok16":
-          return os.path.join(args.output, "%s_%05d_%05d.tok16" % (name, idx, total))
+          return os.path.join(args.output, (filename_format + ".tok16") % (name, idx, total))
         elif args.format == "tok32":
-          return os.path.join(args.output, "%s_%05d_%05d.tok32" % (name, idx, total))
+          return os.path.join(args.output, (filename_format + ".tok32") % (name, idx, total))
         else:
           raise ValueError("Unknown --format {}".format(args.format))
 
