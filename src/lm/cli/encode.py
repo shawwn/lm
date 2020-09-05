@@ -3,6 +3,7 @@ import time
 from glob import glob
 from multiprocessing import Pool, cpu_count
 
+import numpy as np
 import tensorflow as tf
 from absl import app, logging
 from absl.flags import argparse_flags
@@ -55,7 +56,7 @@ def sizechunks(l, n):
 
 
 def parallel(src_dst_list, total):
-    count = args.nproc
+    count = args.nproc or cpu_count()
     pool = Pool(processes=count) if count > 1 else None
     mapper = pool.imap if count > 1 else map
     token_total = 0
@@ -69,33 +70,11 @@ def parallel(src_dst_list, total):
     return token_total, example_total
 
 
-def listfiles(location):
-    # check if is an index file
-    txt_files = []
-    if tf.io.gfile.exists(location):
-        if not tf.io.gfile.isdir(location):
-            with tf.io.gfile.GFile(location) as fd:
-                for l in fd.readlines():
-                    if tf.io.gfile.exists(l):
-                        txt_files.append(l)
-    if txt_files:
-        return txt_files
-
-    txt_files = list(p for p in glob(location) if not os.path.isdir(p))
-
-    # try with general glob
-    if not txt_files:
-        txt_files = list(glob(os.path.join(location, "*.*")))
-
-    txt_files = list(p for p in txt_files if not os.path.isdir(p))
-    return txt_files
-
-
 def parse_args(args, parser):
     parser.add_argument(
         "input",
         type=str,
-        help="Path to where your files are located.",
+        help="A file containing a list of filenames. Each file will become a single training example (unless --by_line is set).",
     )
     parser.add_argument(
         "output", type=str, default="output", help="Where to write tfrecords"
@@ -117,8 +96,28 @@ def parse_args(args, parser):
         "--by_line", action="store_true", help="encodes each line as a separate record"
     )
     parser.add_argument(
-        "--nproc", type=int, default=cpu_count(), help="the number of processes to use for multiprocess encoding (<= 1 to disable multiprocessing)"
+        "--nproc", type=int, default=0, help="the number of processes to use for multiprocess encoding (0=all CPUs, 1=disable multiprocessing)"
     )
+
+
+def is_integer(x):
+  return np.can_cast(x, np.int32)
+
+
+def is_float(x):
+  return np.can_cast(x, np.float32)
+
+
+def is_exact(x):
+  return is_integer(x) or is_float(x) and x == int(x)
+
+
+def num(x, digits_after_decimal=2):
+  if is_integer(x):
+    spec = '{:,d}'
+  else:
+    spec = '{:,.%df}' % digits_after_decimal
+  return spec.format(x)
 
 
 def local_parse_args(args):
@@ -156,7 +155,7 @@ def main(argv):
     def getdst(name, idx, total):
         return os.path.join(args.output, "%s_%05d_%05d.tfrecord" % (name, idx, total))
 
-    jobs = (
+    jobs = list(
         (encoder, chunks, getdst(args.name, idx, len(file_chunks)), args)
         for idx, chunks in enumerate(file_chunks)
     )
@@ -164,9 +163,13 @@ def main(argv):
     start = time.time()
     token_total, example_total = parallel(jobs, total=len(file_chunks))
     end = time.time()
+    elapsed = (end - start)
+    tokens_per_second = token_total / elapsed
+    tokens_per_record = token_total / len(jobs)
 
     logging.info(
-        "job completed in %.2fs, %d / %d good files, %d tokens.", end - start, example_total, len(txt_files), token_total
+        "finished in %ss: tokenized %d of %d files (%s tokens @ %.2f tokens/sec) in %d tfrecords (~%s tokens per record)",
+        num(elapsed), example_total, len(txt_files), num(token_total), tokens_per_second, len(jobs), num(tokens_per_record),
     )
 
 
