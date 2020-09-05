@@ -169,8 +169,11 @@ def check_dataset(trainer, args):
 
 from contextlib import ContextDecorator, ExitStack
 
+class TrainerCPUConfig:
+    pass
 
 class TrainerCPU(ContextDecorator):
+
     def __init__(self, config: TrainerCPUConfig):
         self.config = config
         self._sess = None

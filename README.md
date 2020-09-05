@@ -10,6 +10,25 @@ title: Language Model (lm) End to End Pipeline
 
 [![Updates](https://pyup.io/repos/github/NeuroArchitect/lm/shield.svg)](https://pyup.io/repos/github/NeuroArchitect/lm/)
 
+# TLDR
+
+```
+python3 -m venv .venv && source .venv/bin/activate
+python3 -m pip install -e . 
+lm cleantxt 
+lm encode 
+!mkdir -p /tmp/datasets/tfrecords/
+
+ENCODE_INPUT=/tmp/datasets/txt
+ENCODE_OUTPUT= /tmp/datasets/tfrecords/
+
+!lm encode \
+    --encoder gpt2 \
+    --name  \
+    ${DATASET_OUTPUT}/\* \
+    ${TFRECORD_OUTPUT} 
+```
+
 End to End Language Model Pipeline built for training speed
 
 There are few frameworks out there that focus on sequence to sequence neural network models.
