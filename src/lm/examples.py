@@ -92,6 +92,57 @@ def transform_many_and_write_one_tfrecord(job):
     return token_count, example_count
 
 
+import numpy as np
+import io
+
+def tokens_to_buffer(chunks, stride):
+  assert stride in [2, 4]
+  tokens = np.array(chunks, dtype=np.uint16 if stride == 2 else np.int32)
+  return tokens.tobytes()
+
+def tokens_from_buffer(data, stride):
+  assert stride in [2, 4]
+  return np.frombuffer(data, dtype=np.uint16 if stride == 2 else np.int32)
+
+def tokens_to_file(out, chunks, stride):
+  if isinstance(out, tf.io.gfile.GFile):
+    data = tokens_to_buffer(chunks, stride)
+    out.write(data)
+  else:
+    assert stride in [2, 4]
+    tokens = np.array(chunks, dtype=np.uint16 if stride == 2 else np.int32)
+    tokens.tofile(out)
+
+def tokens_from_file(f, stride):
+  if isinstance(f, tf.io.gfile.GFile):
+    return tokens_from_buffer(f.read(), stride)
+  if isinstance(f, str) and f.startswith('gs://'):
+    with tf.io.gfile.GFile(f, 'rb') as f:
+      return tokens_from_file(f, stride)
+  assert stride in [2, 4]
+  return np.fromfile(f, dtype=np.uint16 if stride == 2 else np.int32)
+
+
+import tqdm
+
+def transform_many_and_write_one_tok16_or_tok32(job):
+    tokenizer, sources, dst, args = job
+    assert args.format in ["tok16", "tok32"]
+    bytes_per_token = 2 if args.format == "tok16" else 4
+    token_count = 0
+    example_count = 0
+    with open(dst, 'wb') as w:
+        pbar = tqdm.tqdm(sources)
+        for source in pbar:
+            pbar.set_description(source)
+            for uids, sources, tokens, start_offsets, end_offsets in batch_tokenizer(tokenizer, source, by_line=args.by_line):
+                tokens_to_file(w, tokens, stride=bytes_per_token)
+                token_count += len(tokens)
+                example_count += 1
+    return token_count, example_count
+
+
+
 def batch_tokenizer(tokenizer, txtfile_location, by_line=False):
     # just convert to the token ids, we will do adaptative padding on training time.
     with tf.io.gfile.GFile(txtfile_location, "rb") as f:

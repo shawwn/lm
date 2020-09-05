@@ -12,7 +12,17 @@ title: Language Model (lm) End to End Pipeline
 
 # EleutherAI GPT Encoder
 
-Turns files into OpenAI-tokenized .tfrecords, with one example per file.
+Turns files into OpenAI-tokenized .tfrecords; each file becomes a
+single `tf.train.Example`.
+
+Can also dump raw tokens to disk in uint16 or int32 format. Pass
+`--format tok16` or `--format tok32` for this.
+
+(Note that uint16 tokens (`--format tok16`) are roughly half the size
+of the original text! Most people don't realize that tokenized text is
+*smaller*, not larger. This is because most people store tokens as
+int64, partly because tensorflow's TFRecord format only supports
+int64.)
 
 ## Encoder Quickstart
 

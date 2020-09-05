@@ -59,10 +59,16 @@ def parallel(src_dst_list, total):
     count = args.nproc or cpu_count()
     pool = Pool(processes=count) if count > 1 else None
     mapper = pool.imap if count > 1 else map
+    if args.format == "tfrecord":
+      transformer = lm.examples.transform_many_and_write_one_tfrecord
+    elif args.format in ["tok16", "tok32"]:
+      transformer = lm.examples.transform_many_and_write_one_tok16_or_tok32
+    else:
+      raise ValueError("Unknown --format {}".format(args.format))
     token_total = 0
     example_total = 0
     for token_count, example_count in tqdm.tqdm(
-        mapper(lm.examples.transform_many_and_write_one_tfrecord, src_dst_list),
+        mapper(transformer, src_dst_list),
         total=total,
     ):
         token_total += token_count
@@ -97,6 +103,9 @@ def parse_args(args, parser):
     )
     parser.add_argument(
         "--nproc", type=int, default=0, help="the number of processes to use for multiprocess encoding (0=all CPUs, 1=disable multiprocessing)"
+    )
+    parser.add_argument(
+        "--format", type=str, default="tfrecord", help="""--format=tfrecord (the default) writes tokens as .tfrecord files; each document becomes a single tf.train.Example. --format=tok16 simply dumps uint16 tokens to disk; good for OpenAI GPT-2/GPT-3 tokenization (which is the default --encoder setting). --format=tok32 dumps int32 tokens to disk; suitable for advanced tokenization schemes that need to store negative-valued tokens or whose vocabulary is larger than 65535 elements."""
     )
 
 
@@ -153,7 +162,14 @@ def main(argv):
     )
 
     def getdst(name, idx, total):
-        return os.path.join(args.output, "%s_%05d_%05d.tfrecord" % (name, idx, total))
+        if args.format == "tfrecord":
+          return os.path.join(args.output, "%s_%05d_%05d.tfrecord" % (name, idx, total))
+        elif args.format == "tok16":
+          return os.path.join(args.output, "%s_%05d_%05d.tok16" % (name, idx, total))
+        elif args.format == "tok32":
+          return os.path.join(args.output, "%s_%05d_%05d.tok32" % (name, idx, total))
+        else:
+          raise ValueError("Unknown --format {}".format(args.format))
 
     jobs = list(
         (encoder, chunks, getdst(args.name, idx, len(file_chunks)), args)
