@@ -83,8 +83,8 @@ def parse_args(args, parser):
     parser.add_argument(
         "--size",
         type=float,
-        default=50.0,
-        help="the size in MB of uncompressed text to add to each tfrecord file, default 50MiB",
+        default=165.0,
+        help="the size in MB of uncompressed text to add to each tfrecord file, default 165MB",
     )
     parser.add_argument(
         "--name", type=str, default="dataset", help="prefix name for the output files."
