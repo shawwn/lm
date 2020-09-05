@@ -10,6 +10,43 @@ title: Language Model (lm) End to End Pipeline
 
 [![Updates](https://pyup.io/repos/github/NeuroArchitect/lm/shield.svg)](https://pyup.io/repos/github/NeuroArchitect/lm/)
 
+# EleutherAI GPT Encoder
+
+Turns files into OpenAI-tokenized .tfrecords, with one example per file.
+
+## Encoder Quickstart
+
+```
+git clone https://github.com/shawwn/lm
+cd lm
+sudo pip3 install jsonnet==0.16.0
+sudo pip3 install pydantic
+sudo pip3 install transformers
+sudo pip3 install pyfarmhash
+bash tokenize.sh list_of_files.txt wherever_you_want_tfrecords/
+```
+
+Add e.g. `--size 500` to add 500MB of uncompressed input text into
+each tfrecord file. (Note that it's `500 * 1e6` bytes, not `500 *
+2**20` bytes.)
+
+Set `--nproc 1` to disable multiprocessing. Useful for debugging via
+pdb.
+
+WARNING: The script currently DOES NOT check whether the output dir
+already has some tfrecord files. It will overwrite existing files.
+Meaning, if it generates fewer tfrecords than exist in the output dir,
+you will end up with a weird partial dataset. I'll fix this soon, but
+for now just be sure the output dir is empty. I probably could have
+fixed this more quickly than I typed this.
+
+---
+
+The rest of the README is the unmodified version from the base `lm`
+repo. Probably **disregard the rest of this README** if you're just
+encoding text. But `lm` has some cool features if you're feeling
+adventurous:
+
 # TLDR
 
 ```
