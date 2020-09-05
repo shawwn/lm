@@ -168,8 +168,8 @@ def main(argv):
     tokens_per_record = token_total / len(jobs)
 
     logging.info(
-        "finished in %ss: tokenized %d of %d files (%s tokens @ %.2f tokens/sec) in %d tfrecords (~%s tokens per record)",
-        num(elapsed), example_total, len(txt_files), num(token_total), tokens_per_second, len(jobs), num(tokens_per_record),
+        "finished in %ss: tokenized %d of %d files (%s tokens @ %s tokens/sec) in %d tfrecords (~%s tokens per record)",
+        num(elapsed), example_total, len(txt_files), num(token_total), num(tokens_per_second), len(jobs), num(tokens_per_record),
     )
 
 
