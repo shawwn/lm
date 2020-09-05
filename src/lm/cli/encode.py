@@ -12,11 +12,11 @@ import lm.config
 import lm.encoders
 import lm.examples
 
-WHOLE_FILE = False
+args = None
 
 def readlines_txt(src):
     with open(src) as fd:
-        if WHOLE_FILE:
+        if not args.by_line:
             return [fd.read()]
         else:
             return fd.readlines()
@@ -55,15 +55,18 @@ def sizechunks(l, n):
 
 
 def parallel(src_dst_list, total):
-    count = cpu_count() - 1 or 1
-    pool = Pool(processes=count)
-    ret = 0
-    for i in tqdm.tqdm(
-        pool.imap(lm.examples.transform_many_and_write_one_tfrecord, src_dst_list),
+    count = args.nproc
+    pool = Pool(processes=count) if count > 1 else None
+    mapper = pool.imap if count > 1 else map
+    token_total = 0
+    example_total = 0
+    for token_count, example_count in tqdm.tqdm(
+        mapper(lm.examples.transform_many_and_write_one_tfrecord, src_dst_list),
         total=total,
     ):
-        ret += i
-    return ret
+        token_total += token_count
+        example_total += example_count
+    return token_total, example_total
 
 
 def listfiles(location):
@@ -100,18 +103,21 @@ def parse_args(args, parser):
 
     parser.add_argument(
         "--size",
-        type=int,
-        default=50 * 2 ** 20,
-        help="the size in MiB of uncompressed text to add to each tfrecord file, default 50MiB",
+        type=float,
+        default=50.0,
+        help="the size in MB of uncompressed text to add to each tfrecord file, default 50MiB",
     )
     parser.add_argument(
         "--name", type=str, default="dataset", help="prefix name for the output files."
     )
     parser.add_argument(
-        "--encoder", type=str, required=True, help="Name or path of an encoder spec"
+        "--encoder", type=str, default="gpt2", help="Name or path of an encoder spec"
     )
     parser.add_argument(
-        "--by_file", action="store_true", help="encodes the whole file as a single record"
+        "--by_line", action="store_true", help="encodes each line as a separate record"
+    )
+    parser.add_argument(
+        "--nproc", type=int, default=cpu_count(), help="the number of processes to use for multiprocess encoding (<= 1 to disable multiprocessing)"
     )
 
 
@@ -121,9 +127,11 @@ def local_parse_args(args):
     return parser.parse_args(args[1:])
 
 
-def main(args):
+def main(argv):
+    global args
+    args = argv
 
-    txt_files = listfiles(args.input)
+    txt_files = open(args.input).read().splitlines()
     if not txt_files:
         logging.error("no data files found")
         return
@@ -136,32 +144,29 @@ def main(args):
     else:
         encoder = lm.encoders.from_config(dict(kind="hf", location=args.encoder))
 
+    megabytes_per_tfrecord = int(args.size * 1e6)
     file_chunks = sizechunks(
-        txt_files, args.size
+        txt_files, megabytes_per_tfrecord
     )  # Assign files_per file to a tfrecord file each
 
     logging.info(
         "Got %d files, divided into %d chunks.", len(txt_files), len(file_chunks)
     )
 
-    if args.by_file:
-        global WHOLE_FILE
-        WHOLE_FILE = True
-
     def getdst(name, idx, total):
         return os.path.join(args.output, "%s_%05d_%05d.tfrecord" % (name, idx, total))
 
     jobs = (
-        (encoder, chunks, getdst(args.name, idx, len(file_chunks)))
+        (encoder, chunks, getdst(args.name, idx, len(file_chunks)), args)
         for idx, chunks in enumerate(file_chunks)
     )
 
     start = time.time()
-    ret = parallel(jobs, total=len(txt_files))
+    token_total, example_total = parallel(jobs, total=len(file_chunks))
     end = time.time()
 
     logging.info(
-        "job completed in %.2fs, %d / %d good files.", end - start, ret, len(txt_files)
+        "job completed in %.2fs, %d / %d good files, %d tokens.", end - start, example_total, len(txt_files), token_total
     )
 
 

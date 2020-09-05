@@ -77,23 +77,35 @@ def create_example(features: PreProcessedTextLine) -> tf.train.Example:
 
 
 def transform_many_and_write_one_tfrecord(job):
-    tokenizer, sources, dst = job
+    tokenizer, sources, dst, args = job
+    token_count = 0
+    example_count = 0
     with tf.io.TFRecordWriter(dst) as w:
         for source in sources:
-            for features in batch_tokenizer(tokenizer, source):
-                example = create_example(PreProcessedTextLine(*features))
+            print(str(source))
+            for uids, sources, tokens, start_offsets, end_offsets in batch_tokenizer(tokenizer, source, by_line=args.by_line):
+                result = PreProcessedTextLine(uids, sources, tokens, start_offsets, end_offsets)
+                example = create_example(result)
                 w.write(example.SerializeToString())
-    return len(sources)
+                token_count += len(tokens)
+                example_count += 1
+    return token_count, example_count
 
 
-def batch_tokenizer(tokenizer, txtfile_location):
+def batch_tokenizer(tokenizer, txtfile_location, by_line=False):
     # just convert to the token ids, we will do adaptative padding on training time.
-    lines = [
-        l.decode("utf-8") for l in tf.io.gfile.GFile(txtfile_location, "rb").readlines()
-    ]
-    uids = [farmhash.fingerprint64(line) for line in lines]
+    with tf.io.gfile.GFile(txtfile_location, "rb") as f:
+      if by_line:
+        sources = [l.decode("utf-8") for l in f.readlines()]
+      else:
+        sources = [f.read().decode("utf-8")]
+    if len(sources) <= 0:
+      # tokenizer crashes when given an empty list, so give it an empty string
+      # (this happens in --by_line mode for empty files)
+      sources = ['']
+    uids = [farmhash.fingerprint64(source) for source in sources]
     batches = tokenizer.batch_encode_plus(
-        lines,
+        sources,
         return_token_type_ids=True,
         pad_to_max_length=False,
         truncation=False,
@@ -104,7 +116,7 @@ def batch_tokenizer(tokenizer, txtfile_location):
 
     return zip(
         uids,
-        lines,
+        sources,
         batches["input_ids"],
         [[start for start, end in offsets] for offsets in batches["offset_mapping"]],
         [[end for start, end in offsets] for offsets in batches["offset_mapping"]],
