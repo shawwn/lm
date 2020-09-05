@@ -12,10 +12,14 @@ import lm.config
 import lm.encoders
 import lm.examples
 
+WHOLE_FILE = False
 
 def readlines_txt(src):
     with open(src) as fd:
-        return fd.readlines()
+        if WHOLE_FILE:
+            return [fd.read()]
+        else:
+            return fd.readlines()
 
 
 LINE_READER = {
@@ -63,6 +67,17 @@ def parallel(src_dst_list, total):
 
 
 def listfiles(location):
+    # check if is an index file
+    txt_files = []
+    if tf.io.gfile.exists(location):
+        if not tf.io.gfile.isdir(location):
+            with tf.io.gfile.GFile(location) as fd:
+                for l in fd.readlines():
+                    if tf.io.gfile.exists(l):
+                        txt_files.append(l)
+    if txt_files:
+        return txt_files
+
     txt_files = list(p for p in glob(location) if not os.path.isdir(p))
 
     # try with general glob
@@ -77,8 +92,7 @@ def parse_args(args, parser):
     parser.add_argument(
         "input",
         type=str,
-        help="Path to where your files are located. Files ending in .zst are treated as \
-                        archives, all others as raw text.",
+        help="Path to where your files are located.",
     )
     parser.add_argument(
         "output", type=str, default="output", help="Where to write tfrecords"
@@ -95,6 +109,9 @@ def parse_args(args, parser):
     )
     parser.add_argument(
         "--encoder", type=str, required=True, help="Name or path of an encoder spec"
+    )
+    parser.add_argument(
+        "--by_file", action="store_true", help="encodes the whole file as a single record"
     )
 
 
@@ -126,6 +143,10 @@ def main(args):
     logging.info(
         "Got %d files, divided into %d chunks.", len(txt_files), len(file_chunks)
     )
+
+    if args.by_file:
+        global WHOLE_FILE
+        WHOLE_FILE = True
 
     def getdst(name, idx, total):
         return os.path.join(args.output, "%s_%05d_%05d.tfrecord" % (name, idx, total))
