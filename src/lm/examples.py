@@ -68,8 +68,8 @@ def read_example(example_proto) -> dict:
 def create_example(features: PreProcessedTextLine) -> tf.train.Example:
     feature = {
         "id": _uint64_feature([features.id]),
-        "content": _bytes_feature(features.content.encode("utf-8")),
-        "target": _uint64_feature(features.target),
+        #"content": _bytes_feature(features.content.encode("utf-8")),
+        "text": _uint64_feature(features.target),
         "offset_start": _uint64_feature(features.offset_start),
         "offset_end": _uint64_feature(features.offset_end),
     }
