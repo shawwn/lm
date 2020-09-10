@@ -102,6 +102,9 @@ def parse_args(args, parser):
         "--by_line", action="store_true", help="encodes each line as a separate record"
     )
     parser.add_argument(
+        "--no-ftfy", action="store_true", help="Don't pass source text through ftfy.fix_text() (and don't replace unicode ellipses with '...')"
+    )
+    parser.add_argument(
         "--nproc", type=int, default=0, help="the number of processes to use for multiprocess encoding (0=all CPUs, 1=disable multiprocessing)"
     )
     parser.add_argument(

@@ -131,19 +131,34 @@ def transform_many_and_write_one_tok16_or_tok32(job):
     bytes_per_token = 2 if args.format == "tok16" else 4
     token_count = 0
     example_count = 0
+    ftfy = False if args.no_ftfy else True
     with open(dst, 'wb') as w:
         pbar = tqdm.tqdm(sources)
         for source in pbar:
             pbar.set_description(source)
-            for uids, sources, tokens, start_offsets, end_offsets in batch_tokenizer(tokenizer, source, by_line=args.by_line):
+            for uids, sources, tokens, start_offsets, end_offsets in batch_tokenizer(tokenizer, source, by_line=args.by_line, ftfy=ftfy):
                 tokens_to_file(w, tokens, stride=bytes_per_token)
                 token_count += len(tokens)
                 example_count += 1
     return token_count, example_count
 
 
+def ftfy_text(text):
+  from ftfy import fix_text
+  fixed = fix_text(text)
+  # replace unicode … with ... which ftfy doesn't do by default
+  # NOTE: this departs from openai's convention of calling
+  # ftfy.fix_text() with default arguments. In particular,
+  # OpenAI's GPT-2 models do generate unicode ellipses.
+  # Nonetheless, we replace unicdoe ellipses with ... to
+  # increase the chances of semantic understanding.
+  fixed = fixed.replace(' …', '...') # first pass: convert "foo  …" to "foo..."
+  #fixed = fixed.replace(' …', '...') # second pass: convert "foo …" to "foo..."
+  fixed = fixed.replace('…', '...') # final pass: convert "foo…" to "foo..."
+  return fixed
 
-def batch_tokenizer(tokenizer, txtfile_location, by_line=False):
+
+def batch_tokenizer(tokenizer, txtfile_location, by_line=False, ftfy=True):
     # just convert to the token ids, we will do adaptative padding on training time.
     with tf.io.gfile.GFile(txtfile_location, "rb") as f:
       if by_line:
@@ -154,6 +169,8 @@ def batch_tokenizer(tokenizer, txtfile_location, by_line=False):
       # tokenizer crashes when given an empty list, so give it an empty string
       # (this happens in --by_line mode for empty files)
       sources = ['']
+    if ftfy:
+      sources = [ftfy_text(source) for source in sources]
     uids = [farmhash.fingerprint64(source) for source in sources]
     batches = tokenizer.batch_encode_plus(
         sources,

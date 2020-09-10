@@ -45,6 +45,7 @@ requirements = [
     "tokenizers==0.8.1",
     "ftfy>=5.8,<5.9",
     "pyfarmhash==0.2.2",
+    "ftfy>=5.6",
 ]
 
 setup_requirements = ["pytest-runner", "wheel"]
