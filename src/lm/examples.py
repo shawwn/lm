@@ -84,11 +84,12 @@ def transform_many_and_write_one_tfrecord(job):
         for source in sources:
             print(str(source))
             for uids, sources, tokens, start_offsets, end_offsets in batch_tokenizer(tokenizer, source, by_line=args.by_line):
-                result = PreProcessedTextLine(uids, sources, tokens, start_offsets, end_offsets)
-                example = create_example(result)
-                w.write(example.SerializeToString())
-                token_count += len(tokens)
-                example_count += 1
+                if len(tokens) > 0:
+                    result = PreProcessedTextLine(uids, sources, tokens, start_offsets, end_offsets)
+                    example = create_example(result)
+                    w.write(example.SerializeToString())
+                    token_count += len(tokens)
+                    example_count += 1
     return token_count, example_count
 
 
@@ -133,19 +134,19 @@ def transform_many_and_write_one_tok16_or_tok32(job):
     example_count = 0
     ftfy = False if args.no_ftfy else True
     eos = 50256 if args.encoder == 'gpt2' else 0
-    if eos !== 0:
-      # Should we warn about this?
-      #print('Using EOS 0')
-      pass
+    # # Should we warn about this?
+    # if eos != 0:
+    #   print('Using EOS 0')
     with open(dst, 'wb') as w:
         pbar = tqdm.tqdm(sources)
         for source in pbar:
             pbar.set_description(source)
             for uids, sources, tokens, start_offsets, end_offsets in batch_tokenizer(tokenizer, source, by_line=args.by_line, ftfy=ftfy):
-                tokens.append(eos)
-                tokens_to_file(w, tokens, stride=bytes_per_token)
-                token_count += len(tokens)
-                example_count += 1
+                if len(tokens) > 0:
+                    tokens.append(eos)
+                    tokens_to_file(w, tokens, stride=bytes_per_token)
+                    token_count += len(tokens)
+                    example_count += 1
     return token_count, example_count
 
 
