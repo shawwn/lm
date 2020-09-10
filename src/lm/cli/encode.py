@@ -185,11 +185,11 @@ def main(argv):
     end = time.time()
     elapsed = (end - start)
     tokens_per_second = token_total / elapsed
-    tokens_per_record = token_total / len(jobs)
+    tokens_per_file = token_total / len(jobs)
 
     logging.info(
-        "finished in %ss: tokenized %d of %d files (%s tokens @ %s tokens/sec) in %d tfrecords (~%s tokens per record)",
-        num(elapsed), example_total, len(txt_files), num(token_total), num(tokens_per_second), len(jobs), num(tokens_per_record),
+        "finished in %ss: tokenized %d of %d files (%s tokens @ %s tokens/sec) into %d files (~%s tokens per file)",
+        num(elapsed), example_total, len(txt_files), num(token_total), num(tokens_per_second), len(jobs), num(tokens_per_file),
     )
 
 
