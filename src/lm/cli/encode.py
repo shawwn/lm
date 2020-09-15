@@ -43,7 +43,7 @@ def sizechunks(l, n):
     out = []
     chunk = []
     sz = 0
-    for fpath in l:
+    for fpath in tqdm.tqdm(l, label="Measuring size..."):
         chunk.append(fpath)
         sz += tf.io.gfile.stat(fpath).length
         if sz >= n:
